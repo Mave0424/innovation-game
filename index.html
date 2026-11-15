@@ -150,7 +150,7 @@ const svg=lv=>'<svg viewBox="0 0 48 48">'+LV[lv].i+'</svg>';
 const grad=lv=>'linear-gradient(160deg,'+LV[lv].c[0]+','+LV[lv].c[1]+')';
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
-let gen=0,cells,score,best=+store.get('pps.best',0)||0,maxLv,order,gap,over,exportsN,delivered,seen,snd=store.get('pps.snd','1')==='1';
+let gen=0,fails=0,cells,score,best=+store.get('pps.best',0)||0,maxLv,order,gap,over,exportsN,delivered,seen,snd=store.get('pps.snd','1')==='1';
 
 // 효과음: 파일 없이 브라우저에서 바로 합성한다.
 let ac,master,noiseBuf;
@@ -190,7 +190,7 @@ function line(dx,dy,k){const a=[];for(let j=0;j<4;j++)a.push(dx===1?k*4+3-j:dx==
 
 function reset(){
  board.innerHTML='';for(let i=0;i<16;i++){const s=document.createElement('div');s.className='slot';s.style.setProperty('--x',i%4);s.style.setProperty('--y',i>>2);board.appendChild(s)}
- gen++;cells=Array(16).fill(null);score=0;maxLv=1;order=null;gap=4;over=false;exportsN=0;delivered=0;seen={1:true};
+ gen++;fails=0;cells=Array(16).fill(null);score=0;maxLv=1;order=null;gap=4;over=false;exportsN=0;delivered=0;seen={1:true};
  spawn();spawn();note('<b>같은 단계끼리 합쳐 키우세요</b>화면을 밀거나 방향키를 누르면 모든 제품이 움직입니다.');render();
 }
 function note(html,flash){const n=$('note');n.innerHTML=html.replace('</b>','</b> ');if(flash){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash')}}
@@ -204,7 +204,8 @@ function move(dx,dy){
     place(t,L[out.length-1]);t.el.classList.add('under');setTimeout(()=>t.el.remove(),120)}
    else out.push(t)}
   out.forEach((t,j)=>{if(t.i!==L[j])moved=true;place(t,L[j]);cells[L[j]]=t})}
- if(!moved){tone(120,.07,'sine',0,.18,80);return}
+ if(!moved){tone(120,.07,'sine',0,.18,80);if(noMoves()){if(++fails>=2){over=true;end()}else lastChance()}return}
+ fails=0;
  let top=0,fresh=0;
  ups.forEach((t,k)=>{delete t.m;top=Math.max(top,t.lv);const nw=!seen[t.lv];if(nw){seen[t.lv]=true;fresh=Math.max(fresh,t.lv)}const lv=t.lv,at=t.i;sfxMerge(lv,k);setTimeout(()=>{if(g!==gen)return;paint(t);pop(t);burst(at,lv,PTS[lv]);big(lv,nw)},90+k*60)});
  if(top>maxLv)maxLv=top;
@@ -218,18 +219,22 @@ function move(dx,dy){
  if(fresh)note('<b>'+LV[fresh].n+'</b>'+LV[fresh].d,true);
  render();
  if(isOver()){over=true;setTimeout(end,700)}
+ else if(noMoves())setTimeout(()=>{if(g===gen&&!over&&noMoves()){fails=1;lastChance()}},500);
 }
+// 판이 가득 차 밀 수 없지만 납품할 제품이 남은 경우: 한 번 알려 주고, 그래도 밀면 게임을 끝낸다.
+function lastChance(){banner('마지막 기회!');note('<b>더 움직일 수 없어요</b>금색으로 빛나는 제품을 눌러 납품하면 자리가 생깁니다. 한 번 더 밀면 게임이 끝납니다.',true);tone(440,.12,'triangle',0,.2);tone(330,.2,'triangle',.12,.2)}
 function newOrder(){const hi=Math.min(6,Math.max(3,maxLv)),lo=hi>=5?3:2,lv=lo+(Math.random()*(hi-lo+1)|0);order={who:WHO[Math.random()*WHO.length|0],lv,left:8+lv*2};beep(880,.08,'sine');beep(1175,.12,'sine',.09);
  if(!store.get('pps.hint')){store.set('pps.hint','1');note('<b>수요기관 요청이 왔어요</b>판에서 금색으로 빛나는 제품을 누르면 납품됩니다.',true)}}
 function deliver(t){
  if(over||!order||t.lv!==order.lv)return;const p=PTS[t.lv]+30;cells[t.i]=null;t.el.classList.remove('want');t.el.classList.add('deliver');setTimeout(()=>t.el.remove(),340);
- delivered++;add(p);note('<b>'+order.who+'에 납품 완료</b>'+LV[t.lv].n+' 단계 제품이 현장에서 쓰입니다. +'+p+'점',true);burst(t.i,t.lv,p);order=null;gap=6;noise(.06,2600,0,.12);[660,880,1320].forEach((f,j)=>tone(f,.18,'triangle',j*.07,.22));buzz(15);render();
+ delivered++;fails=0;add(p);note('<b>'+order.who+'에 납품 완료</b>'+LV[t.lv].n+' 단계 제품이 현장에서 쓰입니다. +'+p+'점',true);burst(t.i,t.lv,p);order=null;gap=6;noise(.06,2600,0,.12);[660,880,1320].forEach((f,j)=>tone(f,.18,'triangle',j*.07,.22));buzz(15);render();
 }
-function isOver(){
- for(let i=0;i<16;i++){const t=cells[i];if(!t)return false;if(order&&t.lv===order.lv)return false;
+function noMoves(){
+ for(let i=0;i<16;i++){const t=cells[i];if(!t)return false;
   if(i%4<3&&cells[i+1]&&cells[i+1].lv===t.lv)return false;if(i<12&&cells[i+4]&&cells[i+4].lv===t.lv)return false}
  return true;
 }
+function isOver(){return noMoves()&&!(order&&cells.some(t=>t&&t.lv===order.lv))}
 function render(){
  $('score').textContent=score.toLocaleString();$('best').textContent=best.toLocaleString();
  for(const t of cells)if(t)t.el.classList.toggle('want',!!order&&t.lv===order.lv);
