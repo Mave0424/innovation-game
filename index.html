@@ -28,7 +28,10 @@ h1 small{display:block;font-size:12.5px;font-weight:500;color:var(--mute);letter
 #order .tx span{color:var(--mute);font-size:12.5px}
 #order .left{flex:none;text-align:center;font-size:11px;color:var(--mute)}
 #order .left b{display:block;font-size:20px;color:var(--gold)}
-#wrap{width:min(100%,max(240px,calc(100vh - 372px)));width:min(100%,max(240px,calc(100dvh - 372px)));margin:0 auto}
+#missions{display:flex;gap:6px}
+#missions div{flex:1;min-width:0;background:var(--panel);border-radius:10px;padding:8px 4px;text-align:center;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cfdbe7}
+#missions .done{background:#1d4a44;color:var(--accent)}
+#wrap{width:min(100%,max(240px,calc(100vh - 416px)));width:min(100%,max(240px,calc(100dvh - 416px)));margin:0 auto}
 #board{position:relative;aspect-ratio:1;background:var(--panel);border-radius:18px;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
 .slot,.tile,.fx{position:absolute;left:var(--g);top:var(--g);width:calc((100% - 5*var(--g))/4);height:calc((100% - 5*var(--g))/4);transform:translate(calc(var(--x)*(100% + var(--g))),calc(var(--y)*(100% + var(--g))))}
 .slot{background:var(--slot);border-radius:var(--r)}
@@ -109,6 +112,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:round;stroke-l
     </div>
   </header>
   <div id="order"></div>
+  <div id="missions"></div>
   <div id="wrap"><div id="board"></div></div>
   <div id="note"></div>
   <div id="steps"></div>
@@ -125,21 +129,21 @@ svg{fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:round;stroke-l
 const TITLE='혁신 키우기';
 // 단계 정보. 게임 속 순서는 이해를 돕기 위한 가상 설정이다.
 const LV=[null,
- {s:'아이디어',n:'아이디어',c:['#66788c','#4a5a6b'],d:'모든 혁신은 작은 아이디어에서 시작됩니다.',
+ {s:'아이디어',n:'반짝 아이디어',c:['#66788c','#4a5a6b'],d:'모든 혁신은 작은 아이디어에서 시작됩니다.',
   i:'<path d="M24 6a12 12 0 0 0-7 21.7c1.3 1 2 2.4 2 4V33h10v-1.3c0-1.6.7-3 2-4A12 12 0 0 0 24 6z"/><path d="M19 38h10M21 42h6"/>'},
- {s:'연구개발',n:'연구개발',c:['#4a95e6','#2f6fc0'],d:'기술개발과 혁신조달을 이어, 개발한 기술이 공공시장으로 나아가게 합니다.',
+ {s:'실험실',n:'실험실 연구',c:['#4a95e6','#2f6fc0'],d:'조달 용어로는 ‘혁신제품 연구개발’. 개발한 기술이 공공시장으로 이어지도록 돕습니다.',
   i:'<path d="M19 6h10M21 6v12L11 36a4 4 0 0 0 3.5 6h19a4 4 0 0 0 3.5-6L27 18V6"/><path d="M15.5 30h17"/>'},
- {s:'시제품',n:'시제품',c:['#25c2b0','#16968a'],d:'아이디어가 제품의 모습을 갖췄습니다. 이제 먼저 써 줄 곳이 필요합니다.',
+ {s:'시제품',n:'첫 시제품',c:['#25c2b0','#16968a'],d:'아이디어가 제품의 모습을 갖췄습니다. 이제 먼저 써 줄 곳이 필요합니다.',
   i:'<path d="M24 5l16 8v20l-16 9-16-9V13z"/><path d="M8 13l16 9 16-9M24 22v20"/>'},
- {s:'혁신지정',n:'혁신제품 지정',c:['#62c450','#3f9a35'],d:'혁신성과 공공성을 인정받은 제품이 혁신제품으로 지정됩니다.',
+ {s:'인증합격',n:'혁신 인증 합격',c:['#62c450','#3f9a35'],d:'조달 용어로는 ‘혁신제품 지정’. 혁신성과 공공성을 인정받은 제품에 주는 이름표입니다.',
   i:'<circle cx="24" cy="19" r="12"/><path d="M18.5 19l4 4 7-8"/><path d="M17 29.5L14 43l10-5 10 5-3-13.5"/>'},
- {s:'시범구매',n:'시범구매',c:['#f5b043','#d98a1c'],d:'정부가 첫 구매자가 되어 혁신제품을 먼저 사서 써 봅니다.',
+ {s:'첫 손님',n:'정부가 첫 손님',c:['#f5b043','#d98a1c'],d:'조달 용어로는 ‘시범구매’. 정부가 첫 구매자가 되어 혁신제품을 먼저 사서 써 봅니다.',
   i:'<path d="M6 18L24 6l18 12z"/><path d="M11 23v13M19 23v13M29 23v13M37 23v13M6 41h36"/>'},
- {s:'현장실증',n:'현장 실증',c:['#f47d48','#d4562a'],d:'AI·로봇·드론 같은 신산업 제품을 공공 현장에서 직접 써 보며 검증합니다.',
+ {s:'현장투입',n:'현장 투입',c:['#f47d48','#d4562a'],d:'조달 용어로는 ‘현장 실증’. AI·로봇·드론 같은 신산업 제품을 공공 현장에서 직접 써 보며 검증합니다.',
   i:'<rect x="18" y="19" width="12" height="10" rx="3"/><path d="M18 21l-7-6M30 21l7-6M18 27l-7 6M30 27l7 6M5 14h12M31 14h12M5 34h12M31 34h12"/>'},
- {s:'판로확대',n:'공공판로 확대',c:['#e0508a','#b93068'],d:'현장에서 검증된 제품이 전국의 수요기관으로 퍼져 나갑니다.',
+ {s:'전국배달',n:'전국으로 배달',c:['#e0508a','#b93068'],d:'조달 용어로는 ‘공공판로 확대’. 현장에서 검증된 제품이 전국의 공공기관으로 퍼져 나갑니다.',
   i:'<circle cx="24" cy="10" r="5"/><circle cx="9" cy="36" r="5"/><circle cx="39" cy="36" r="5"/><circle cx="24" cy="27" r="3"/><path d="M24 15v9M21.5 29L13 33.5M26.5 29l8.5 4.5"/>'},
- {s:'해외진출',n:'G-PASS 해외진출',c:['#9a6bff','#6d3fd6'],d:'유망 조달기업이 G-PASS 기업이 되어 해외 조달시장에 도전합니다.',
+ {s:'세계수출',n:'세계로 수출',c:['#9a6bff','#6d3fd6'],d:'조달 용어로는 ‘G-PASS 해외진출’. 유망 조달기업이 해외 조달시장에 도전하도록 돕습니다.',
   i:'<circle cx="24" cy="24" r="17"/><path d="M7 24h34M24 7c-7 5-7 29 0 34M24 7c7 5 7 29 0 34"/>'}
 ];
 const PTS=[0,0,20,50,120,300,700,1600,4000];
@@ -150,6 +154,7 @@ const svg=lv=>'<svg viewBox="0 0 48 48">'+LV[lv].i+'</svg>';
 const grad=lv=>'linear-gradient(160deg,'+LV[lv].c[0]+','+LV[lv].c[1]+')';
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
+let round=0,stars=0,missions=null;
 let gen=0,fails=0,cells,score,best=+store.get('pps.best',0)||0,maxLv,order,gap,over,exportsN,delivered,seen,snd=store.get('pps.snd','1')==='1';
 
 // 효과음: 파일 없이 브라우저에서 바로 합성한다.
@@ -172,7 +177,7 @@ function sfxMerge(lv,k){const w=.09+k*.06;tone(170-lv*6,.16+lv*.012,'sine',w,.6,
 function flash(c){const e=document.createElement('div');e.className='flashfx';e.style.background=c;board.appendChild(e);setTimeout(()=>e.remove(),600)}
 function banner(s){board.querySelectorAll('.banner').forEach(x=>x.remove());const e=document.createElement('div');e.className='combo banner';e.textContent=s;board.appendChild(e);setTimeout(()=>e.remove(),1500)}
 function confetti(n){const p=$('party'),cs=['#ffc857','#35d0ba','#9a6bff','#f47d48','#4a95e6','#e0508a','#ffffff'];for(let k=0;k<n;k++){const e=document.createElement('i');e.style.cssText='left:'+Math.random()*100+'%;background:'+cs[k%cs.length]+';animation-duration:'+(1.4+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(Math.random()*.5).toFixed(2)+'s;--q:'+(Math.random()*720-360|0)+'deg;--s:'+(Math.random()*40-20|0)+'vw';p.appendChild(e);setTimeout(()=>e.remove(),3600)}}
-function big(lv,nw){if(lv>=6)flash(LV[lv].c[0]);if(lv===8){banner('세계 시장 진출!');confetti(110)}else if(lv===7){banner('전국으로 판로 확대!');confetti(36)}else if(nw&&lv>=4)banner('새 단계 · '+LV[lv].n)}
+function big(lv,nw){if(lv>=6)flash(LV[lv].c[0]);if(lv===8){banner('세계 시장 진출!');confetti(110)}else if(lv===7){banner('전국으로 배달!');confetti(36)}else if(nw&&lv>=4)banner('새 단계 · '+LV[lv].n)}
 function buzz(p){try{if(snd&&navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 // 합쳐질 때의 시각 효과: 충격 고리, 불꽃, 떠오르는 점수
 function burst(i,lv,pts){const fx=document.createElement('div');fx.className='fx';fx.style.setProperty('--x',i%4);fx.style.setProperty('--y',i>>2);fx.style.setProperty('--c',LV[lv].c[0]);
@@ -184,13 +189,19 @@ function combo(n){const e=document.createElement('div');e.className='combo';e.te
 function place(t,i){t.i=i;t.el.style.setProperty('--x',i%4);t.el.style.setProperty('--y',i>>2)}
 function paint(t){const f=t.el.firstChild;f.style.background=grad(t.lv);f.innerHTML=svg(t.lv)+'<span>'+LV[t.lv].s+'</span>'}
 function make(lv,i){const el=document.createElement('div');el.className='tile';el.innerHTML='<div class="face"></div>';const t={lv,el};el._t=t;paint(t);place(t,i);board.appendChild(el);cells[i]=t;return t}
-function spawn(){const e=[];for(let i=0;i<16;i++)if(!cells[i])e.push(i);if(!e.length)return;make(Math.random()<.9?1:2,e[Math.random()*e.length|0])}
+function spawn(){const e=[];for(let i=0;i<16;i++)if(!cells[i])e.push(i);if(!e.length)return;const r=Math.random();make(maxLv>=7?(r<.5?1:r<.85?2:3):maxLv>=5?(r<.65?1:r<.93?2:3):(r<.9?1:2),e[Math.random()*e.length|0])}
 function pop(t){t.el.classList.remove('pop');void t.el.offsetWidth;t.el.classList.add('pop')}
 function line(dx,dy,k){const a=[];for(let j=0;j<4;j++)a.push(dx===1?k*4+3-j:dx===-1?k*4+j:dy===1?(3-j)*4+k:j*4+k);return a}
 
+// 임무: 한 판에 3개씩, 모두 끝내면 보너스와 함께 더 어려운 묶음이 나온다.
+function newMissions(){const r=round,M=(t,n,lv)=>({t,n,lv,c:0});
+ missions=r===0?[M('make',2,4),M('deliver',1),M('combo',1)]:r===1?[M('make',2,5),M('deliver',2),M('combo',2)]:r===2?[M('make',2,6),M('deliver',3),M('make',1,7)]:[M('make',Math.min(r-1,4),7),M('deliver',r+1),M('export',1)]}
+function mLabel(m){return m.t==='make'?LV[m.lv].s:m.t==='deliver'?'납품':m.t==='combo'?'더블콤보':'세계수출'}
+function progress(t,lv){let hit=false;for(const m of missions){if(m.c>=m.n||m.t!==t||(t==='make'&&m.lv!==lv))continue;m.c++;if(m.c>=m.n){hit=true;stars++;add(200*(round+1));tone(988,.12,'triangle',.25,.2);tone(1319,.25,'triangle',.37,.2)}}
+ if(hit&&missions.every(m=>m.c>=m.n)){const b=1000*(round+1),g=gen;round++;setTimeout(()=>{if(g!==gen)return;add(b);banner('임무 완료! +'+b);confetti(40);newMissions();render()},650)}}
 function reset(){
  board.innerHTML='';for(let i=0;i<16;i++){const s=document.createElement('div');s.className='slot';s.style.setProperty('--x',i%4);s.style.setProperty('--y',i>>2);board.appendChild(s)}
- gen++;fails=0;cells=Array(16).fill(null);score=0;maxLv=1;order=null;gap=4;over=false;exportsN=0;delivered=0;seen={1:true};
+ gen++;fails=0;round=0;stars=0;newMissions();cells=Array(16).fill(null);score=0;maxLv=1;order=null;gap=4;over=false;exportsN=0;delivered=0;seen={1:true};
  spawn();spawn();note('<b>같은 단계끼리 합쳐 키우세요</b>화면을 밀거나 방향키를 누르면 모든 제품이 움직입니다.');render();
 }
 function note(html,flash){const n=$('note');n.innerHTML=html.replace('</b>','</b> ');if(flash){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash')}}
@@ -207,15 +218,15 @@ function move(dx,dy){
  if(!moved){tone(120,.07,'sine',0,.18,80);if(noMoves()){if(++fails>=2){over=true;end()}else lastChance()}return}
  fails=0;
  let top=0,fresh=0;
- ups.forEach((t,k)=>{delete t.m;top=Math.max(top,t.lv);const nw=!seen[t.lv];if(nw){seen[t.lv]=true;fresh=Math.max(fresh,t.lv)}const lv=t.lv,at=t.i;sfxMerge(lv,k);setTimeout(()=>{if(g!==gen)return;paint(t);pop(t);burst(at,lv,PTS[lv]);big(lv,nw)},90+k*60)});
+ ups.forEach((t,k)=>{delete t.m;top=Math.max(top,t.lv);const nw=!seen[t.lv];if(nw){seen[t.lv]=true;fresh=Math.max(fresh,t.lv)}const lv=t.lv,at=t.i;sfxMerge(lv,k);progress('make',lv);setTimeout(()=>{if(g!==gen)return;paint(t);pop(t);burst(at,lv,PTS[lv]);big(lv,nw)},90+k*60)});
  if(top>maxLv)maxLv=top;
- if(ups.length>1){gain+=(ups.length-1)*30;setTimeout(()=>{if(g===gen)combo(ups.length)},120)}
+ if(ups.length>1){progress('combo');gain+=(ups.length-1)*30;setTimeout(()=>{if(g===gen)combo(ups.length)},120)}
  add(gain);sfxSlide();
  if(top){setTimeout(()=>shake(top),90);buzz(top>=5?[18,30,28]:12)}
  if(order&&--order.left<=0){order=null;gap=5}
  else if(!order){if(gap>0)gap--;else if(maxLv>=3)newOrder()}
  spawn();
- for(const t of ups)if(t.lv===8){cells[t.i]=null;exportsN++;setTimeout(()=>t.el.classList.add('fly'),750);setTimeout(()=>t.el.remove(),1400);buzz([30,40,30,40,60])}
+ for(const t of ups)if(t.lv===8){cells[t.i]=null;exportsN++;progress('export');setTimeout(()=>t.el.classList.add('fly'),750);setTimeout(()=>t.el.remove(),1400);buzz([30,40,30,40,60])}
  if(fresh)note('<b>'+LV[fresh].n+'</b>'+LV[fresh].d,true);
  render();
  if(isOver()){over=true;setTimeout(end,700)}
@@ -224,10 +235,10 @@ function move(dx,dy){
 // 판이 가득 차 밀 수 없지만 납품할 제품이 남은 경우: 한 번 알려 주고, 그래도 밀면 게임을 끝낸다.
 function lastChance(){banner('마지막 기회!');note('<b>더 움직일 수 없어요</b>금색으로 빛나는 제품을 눌러 납품하면 자리가 생깁니다. 한 번 더 밀면 게임이 끝납니다.',true);tone(440,.12,'triangle',0,.2);tone(330,.2,'triangle',.12,.2)}
 function newOrder(){const hi=Math.min(6,Math.max(3,maxLv)),lo=hi>=5?3:2,lv=lo+(Math.random()*(hi-lo+1)|0);order={who:WHO[Math.random()*WHO.length|0],lv,left:8+lv*2};beep(880,.08,'sine');beep(1175,.12,'sine',.09);
- if(!store.get('pps.hint')){store.set('pps.hint','1');note('<b>수요기관 요청이 왔어요</b>판에서 금색으로 빛나는 제품을 누르면 납품됩니다.',true)}}
+ if(!store.get('pps.hint')){store.set('pps.hint','1');note('<b>공공기관에서 주문이 왔어요</b>판에서 금색으로 빛나는 제품을 누르면 납품됩니다.',true)}}
 function deliver(t){
  if(over||!order||t.lv!==order.lv)return;const p=PTS[t.lv]+30;cells[t.i]=null;t.el.classList.remove('want');t.el.classList.add('deliver');setTimeout(()=>t.el.remove(),340);
- delivered++;fails=0;add(p);note('<b>'+order.who+'에 납품 완료</b>'+LV[t.lv].n+' 단계 제품이 현장에서 쓰입니다. +'+p+'점',true);burst(t.i,t.lv,p);order=null;gap=6;noise(.06,2600,0,.12);[660,880,1320].forEach((f,j)=>tone(f,.18,'triangle',j*.07,.22));buzz(15);render();
+ delivered++;fails=0;progress('deliver');add(p);note('<b>'+order.who+'에 납품 완료</b>'+LV[t.lv].n+' 단계 제품이 현장에서 쓰입니다. +'+p+'점',true);burst(t.i,t.lv,p);order=null;gap=6;noise(.06,2600,0,.12);[660,880,1320].forEach((f,j)=>tone(f,.18,'triangle',j*.07,.22));buzz(15);render();
 }
 function noMoves(){
  for(let i=0;i<16;i++){const t=cells[i];if(!t)return false;
@@ -239,8 +250,9 @@ function render(){
  $('score').textContent=score.toLocaleString();$('best').textContent=best.toLocaleString();
  for(const t of cells)if(t)t.el.classList.toggle('want',!!order&&t.lv===order.lv);
  const o=$('order');o.classList.toggle('on',!!order);
- if(order)o.innerHTML='<div class="ic" style="background:'+grad(order.lv)+'">'+svg(order.lv)+'</div><div class="tx"><b>'+order.who+'의 요청</b><span>‘'+LV[order.lv].n+'’ 제품을 눌러 납품하세요</span></div><div class="left"><b>'+order.left+'</b>남은 이동</div>';
- else o.innerHTML='<div class="ic">'+svg(5)+'</div><div class="tx"><b>수요기관 요청 대기 중</b><span>'+(maxLv<3?'시제품까지 키우면 요청이 들어옵니다':'곧 새 요청이 들어옵니다')+'</span></div>';
+ if(order)o.innerHTML='<div class="ic" style="background:'+grad(order.lv)+'">'+svg(order.lv)+'</div><div class="tx"><b>'+order.who+'의 주문</b><span>‘'+LV[order.lv].n+'’ 제품을 눌러 납품하세요</span></div><div class="left"><b>'+order.left+'</b>남은 이동</div>';
+ else o.innerHTML='<div class="ic">'+svg(5)+'</div><div class="tx"><b>공공기관 주문 대기 중</b><span>'+(maxLv<3?'시제품까지 키우면 주문이 들어옵니다':'곧 새 주문이 들어옵니다')+'</span></div>';
+ $('missions').innerHTML=missions.map(m=>{const ok=m.c>=m.n;return '<div class="'+(ok?'done':'')+'">'+(ok?'✓ ':'')+mLabel(m)+' '+Math.min(m.c,m.n)+'/'+m.n+'</div>'}).join('');
  let h='';for(let lv=1;lv<=8;lv++)h+='<button data-lv="'+lv+'" class="'+(seen[lv]?'got':'')+(lv===maxLv?' top':'')+'"'+(seen[lv]?' style="background:'+grad(lv)+'"':'')+' aria-label="'+LV[lv].n+'">'+svg(lv)+'</button>';
  $('steps').innerHTML=h;
 }
@@ -250,14 +262,15 @@ function hide(){$('modal').classList.remove('on')}
 function help(){show('<h2>'+TITLE+'</h2><p>작은 아이디어가 정부의 첫 구매와 현장 실증을 거쳐 세계 시장으로 나아가는 길을 따라가 보세요.</p><ul>'+
  '<li><b>밀기</b> · 화면을 밀거나 방향키를 누르면 모든 제품이 한쪽으로 움직입니다.</li>'+
  '<li><b>합치기</b> · 같은 단계 두 개가 만나면 다음 단계로 자랍니다.</li>'+
- '<li><b>납품</b> · 수요기관 요청이 뜨면 빛나는 제품을 눌러 납품하세요. 점수를 얻고 자리가 생깁니다.</li>'+
+ '<li><b>납품</b> · 소방서·학교 같은 공공기관의 주문이 뜨면 빛나는 제품을 눌러 납품하세요. 점수를 얻고 자리가 생깁니다.</li>'+
+ '<li><b>임무</b> · 판 위의 임무 3개를 모두 끝내면 보너스 점수를 받고 더 어려운 임무가 나옵니다.</li>'+
  '<li><b>해외진출</b> · 마지막 단계에 오르면 세계 시장으로 떠나며 큰 점수를 줍니다.</li></ul>'+
  '<p>판이 가득 차 더 움직일 수 없으면 끝납니다.</p><p class="fine">게임의 단계와 순서는 조달정책의 이해를 돕기 위한 가상 설정이며 실제 제도의 절차와 다를 수 있습니다.</p><button class="go">시작하기</button>')}
 function info(lv){show('<div class="hero" style="background:'+grad(lv)+'">'+svg(lv)+'</div><h2>'+lv+'단계 · '+LV[lv].n+'</h2><p>'+LV[lv].d+'</p><button class="go">닫기</button>')}
 function end(){
  const rank=score>=20000?'혁신조달의 달인':score>=8000?'든든한 첫 구매자':score>=3000?'혁신 지원관':'조달 새내기';
  beep(196,.3,'sine');
- show('<p class="fine">오늘의 성과 · '+rank+'</p><div class="big">'+score.toLocaleString()+'</div><div class="stat"><div><b>'+LV[maxLv].s+'</b>최고 단계</div><div><b>'+delivered+'건</b>납품</div><div><b>'+exportsN+'개</b>해외진출</div></div><p>'+LV[maxLv].d+'</p><button class="go" data-act="new">다시 하기</button>');
+ show('<p class="fine">오늘의 성과 · '+rank+'</p><div class="big">'+score.toLocaleString()+'</div><div class="stat"><div><b>'+LV[maxLv].s+'</b>최고 단계</div><div><b>'+delivered+'건</b>납품</div><div><b>'+exportsN+'개</b>세계수출</div><div><b>'+stars+'개</b>임무</div></div><p>'+LV[maxLv].d+'</p><button class="go" data-act="new">다시 하기</button>');
 }
 
 addEventListener('keydown',e=>{
