@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>혁신 키우기</title>
+<style>
+:root{--bg:#0d1b2a;--panel:#16283c;--slot:#0f2133;--line:#24405c;--ink:#eef4fa;--mute:#8fa6bd;--accent:#35d0ba;--gold:#ffc857;--g:10px;--r:14px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;overscroll-behavior:none}
+body{display:flex;justify-content:center}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+#app{width:min(100vw,480px);padding:14px 16px 18px;display:flex;flex-direction:column;gap:10px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:26px;letter-spacing:-.5px;line-height:1.1}
+h1 small{display:block;font-size:12.5px;font-weight:500;color:var(--mute);letter-spacing:0;margin-top:5px}
+.scores{display:flex;gap:8px}
+.box{background:var(--panel);border-radius:12px;padding:7px 12px;min-width:74px;text-align:center;position:relative}
+.box b{display:block;font-size:11px;color:var(--mute);font-weight:600}
+.box span{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.plus{position:absolute;right:8px;top:-4px;color:var(--gold);font-weight:800;font-size:14px;pointer-events:none;animation:rise .8s forwards}
+#order{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;height:66px;padding:0 12px;display:flex;align-items:center;gap:12px}
+#order.on{border-color:var(--gold);background:#2a2a22}
+#order .ic{flex:none;width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;background:#22384f}
+#order .ic svg{width:64%;height:64%}
+#order .tx{flex:1;min-width:0;font-size:14px;line-height:1.35}
+#order .tx b{display:block;font-size:15px}
+#order .tx span{color:var(--mute);font-size:12.5px}
+#order .left{flex:none;text-align:center;font-size:11px;color:var(--mute)}
+#order .left b{display:block;font-size:20px;color:var(--gold)}
+#wrap{width:min(100%,max(240px,calc(100vh - 372px)));width:min(100%,max(240px,calc(100dvh - 372px)));margin:0 auto}
+#board{position:relative;aspect-ratio:1;background:var(--panel);border-radius:18px;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+.slot,.tile,.fx{position:absolute;left:var(--g);top:var(--g);width:calc((100% - 5*var(--g))/4);height:calc((100% - 5*var(--g))/4);transform:translate(calc(var(--x)*(100% + var(--g))),calc(var(--y)*(100% + var(--g))))}
+.slot{background:var(--slot);border-radius:var(--r)}
+.tile{transition:transform .11s ease-out;z-index:2}
+.tile.under{z-index:1}
+.face{width:100%;height:100%;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3%;color:#fff;box-shadow:inset 0 -4px 0 rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.3);animation:appear .16s .08s backwards}
+.face svg{width:50%;height:50%}
+.face span{font-size:clamp(10px,2.9vw,13px);font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+svg{fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.pop .face{animation:pop .22s}
+.want .face{outline:3px solid var(--gold);outline-offset:-3px;animation:glow .8s infinite alternate}
+.want{cursor:pointer}
+.fly{transition:transform .6s ease-in,opacity .6s ease-in;opacity:0;z-index:5;transform:translate(calc(var(--x)*(100% + var(--g))),-140%) scale(.5)}
+.deliver{transition:transform .32s ease-in,opacity .32s;opacity:0;z-index:5;transform:translate(calc(var(--x)*(100% + var(--g))),calc(var(--y)*(100% + var(--g)) - 60%)) scale(.3)}
+#note{min-height:58px;background:var(--panel);border-radius:14px;padding:9px 14px;font-size:13.5px;line-height:1.45;color:#cfdbe7;display:flex;flex-direction:column;justify-content:center}
+#note b{color:var(--accent);font-size:14px}
+#note.flash{animation:flash .6s}
+#steps{display:flex;gap:5px;justify-content:space-between}
+#steps button{flex:1;aspect-ratio:1;max-width:48px;border-radius:11px;background:var(--panel);color:#4d6680;display:flex;align-items:center;justify-content:center;padding:0}
+#steps button svg{width:58%;height:58%}
+#steps button.got{color:#fff}
+#steps button.top{box-shadow:0 0 0 2px var(--gold)}
+.bar{display:flex;gap:8px}
+.bar button{flex:1;background:var(--panel);border-radius:12px;padding:12px 0;font-weight:700;font-size:14.5px}
+.bar button:active,#steps button:active{filter:brightness(1.25)}
+.bar .main{background:var(--accent);color:#06281f}
+#modal{position:fixed;inset:0;background:rgba(5,12,20,.78);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+#modal.on{display:flex}
+#sheet{width:min(100%,420px);max-height:92vh;overflow:auto;background:#16283c;border:1.5px solid var(--line);border-radius:20px;padding:22px 20px 18px;animation:appear .18s}
+#sheet h2{margin:0 0 4px;font-size:22px}
+#sheet p{margin:6px 0;font-size:14.5px;line-height:1.55;color:#cfdbe7}
+#sheet ul{margin:12px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+#sheet li{background:#0f2133;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;color:#cfdbe7}
+#sheet li b{color:var(--ink)}
+#sheet .fine{font-size:12px;color:var(--mute)}
+#sheet .go{width:100%;margin-top:12px;background:var(--accent);color:#06281f;border-radius:13px;padding:14px;font-weight:800;font-size:16px}
+#sheet .big{font-size:44px;font-weight:800;color:var(--gold);line-height:1.1;font-variant-numeric:tabular-nums}
+#sheet .stat{display:flex;gap:8px;margin:12px 0}
+#sheet .stat div{flex:1;background:#0f2133;border-radius:12px;padding:9px 4px;text-align:center;font-size:12px;color:var(--mute)}
+#sheet .stat b{display:block;font-size:17px;color:var(--ink)}
+#sheet .hero{width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:12px}
+#sheet .hero svg{width:60%;height:60%}
+@keyframes appear{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes pop{0%{transform:scale(.78);filter:brightness(2)}40%{transform:scale(1.26);filter:brightness(1.5)}70%{transform:scale(.95);filter:none}100%{transform:scale(1)}}
+.fx{pointer-events:none;z-index:6}
+.ring{position:absolute;inset:0;border-radius:var(--r);border:4px solid var(--c);animation:ring .45s ease-out forwards}
+.spark{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:3px;background:var(--c);box-shadow:0 0 6px var(--c);animation:spark .55s ease-out forwards}
+.gain{position:absolute;left:-20%;right:-20%;top:-8%;text-align:center;font-weight:800;font-size:clamp(14px,3.8vw,18px);color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.7);animation:gain .8s ease-out forwards}
+.combo{position:absolute;left:0;right:0;top:42%;text-align:center;font-weight:900;font-size:clamp(22px,7vw,34px);color:var(--gold);text-shadow:0 3px 10px rgba(0,0,0,.7);pointer-events:none;z-index:7;animation:combo .9s ease-out forwards}
+.ring.two{opacity:0;border-width:3px;animation-delay:.12s}
+.rich .spark{width:14px;height:14px;margin:-7px;border-radius:50%;animation-duration:.75s}
+.flashfx{position:absolute;inset:0;z-index:4;pointer-events:none;animation:flashfx .55s ease-out forwards}
+.banner{top:18%;font-size:clamp(24px,7.6vw,38px);color:#fff;animation-duration:1.5s}
+#party{position:fixed;inset:0;pointer-events:none;z-index:15;overflow:hidden}
+#party i{position:absolute;top:-24px;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes flashfx{from{opacity:.55}to{opacity:0}}
+@keyframes fall{to{transform:translate(var(--s),112vh) rotate(var(--q))}}
+.shake{animation:shake .26s}
+@keyframes ring{from{transform:scale(.9);opacity:.95}to{transform:scale(1.8);opacity:0}}
+@keyframes spark{from{transform:rotate(var(--a)) translateX(6px) scale(1);opacity:1}to{transform:rotate(var(--a)) translateX(var(--d)) scale(.2);opacity:0}}
+@keyframes gain{0%{transform:translateY(20%) scale(.6);opacity:0}20%{transform:translateY(0) scale(1.15);opacity:1}100%{transform:translateY(-110%) scale(1);opacity:0}}
+@keyframes combo{0%{transform:scale(.4);opacity:0}20%{transform:scale(1.15);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(1) translateY(-30%);opacity:0}}
+@keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(var(--k),calc(var(--k)*-.6))}45%{transform:translate(calc(var(--k)*-.8),calc(var(--k)*.5))}70%{transform:translate(calc(var(--k)*.4),calc(var(--k)*-.3))}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+@keyframes glow{from{box-shadow:0 0 0 0 rgba(255,200,87,.0)}to{box-shadow:0 0 14px 3px rgba(255,200,87,.75)}}
+@keyframes rise{from{transform:translateY(8px);opacity:1}to{transform:translateY(-16px);opacity:0}}
+@keyframes flash{from{background:#27506b}to{background:var(--panel)}}
+@media (max-height:640px){h1 small{display:none}#note{min-height:48px;font-size:12.5px}#order{height:58px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span id="title">혁신 키우기</span><small>아이디어를 합쳐 세계 시장까지</small></h1>
+    <div class="scores">
+      <div class="box" id="scoreBox"><b>점수</b><span id="score">0</span></div>
+      <div class="box"><b>최고</b><span id="best">0</span></div>
+    </div>
+  </header>
+  <div id="order"></div>
+  <div id="wrap"><div id="board"></div></div>
+  <div id="note"></div>
+  <div id="steps"></div>
+  <div class="bar">
+    <button id="bNew" class="main">새 게임</button>
+    <button id="bHelp">게임 방법</button>
+    <button id="bSnd">소리 켬</button>
+  </div>
+</div>
+<div id="party"></div>
+<div id="modal"><div id="sheet"></div></div>
+<script>
+'use strict';
+const TITLE='혁신 키우기';
+// 단계 정보. 게임 속 순서는 이해를 돕기 위한 가상 설정이다.
+const LV=[null,
+ {s:'아이디어',n:'아이디어',c:['#66788c','#4a5a6b'],d:'모든 혁신은 작은 아이디어에서 시작됩니다.',
+  i:'<path d="M24 6a12 12 0 0 0-7 21.7c1.3 1 2 2.4 2 4V33h10v-1.3c0-1.6.7-3 2-4A12 12 0 0 0 24 6z"/><path d="M19 38h10M21 42h6"/>'},
+ {s:'연구개발',n:'연구개발',c:['#4a95e6','#2f6fc0'],d:'기술개발과 혁신조달을 이어, 개발한 기술이 공공시장으로 나아가게 합니다.',
+  i:'<path d="M19 6h10M21 6v12L11 36a4 4 0 0 0 3.5 6h19a4 4 0 0 0 3.5-6L27 18V6"/><path d="M15.5 30h17"/>'},
+ {s:'시제품',n:'시제품',c:['#25c2b0','#16968a'],d:'아이디어가 제품의 모습을 갖췄습니다. 이제 먼저 써 줄 곳이 필요합니다.',
+  i:'<path d="M24 5l16 8v20l-16 9-16-9V13z"/><path d="M8 13l16 9 16-9M24 22v20"/>'},
+ {s:'혁신지정',n:'혁신제품 지정',c:['#62c450','#3f9a35'],d:'혁신성과 공공성을 인정받은 제품이 혁신제품으로 지정됩니다.',
+  i:'<circle cx="24" cy="19" r="12"/><path d="M18.5 19l4 4 7-8"/><path d="M17 29.5L14 43l10-5 10 5-3-13.5"/>'},
+ {s:'시범구매',n:'시범구매',c:['#f5b043','#d98a1c'],d:'정부가 첫 구매자가 되어 혁신제품을 먼저 사서 써 봅니다.',
+  i:'<path d="M6 18L24 6l18 12z"/><path d="M11 23v13M19 23v13M29 23v13M37 23v13M6 41h36"/>'},
+ {s:'현장실증',n:'현장 실증',c:['#f47d48','#d4562a'],d:'AI·로봇·드론 같은 신산업 제품을 공공 현장에서 직접 써 보며 검증합니다.',
+  i:'<rect x="18" y="19" width="12" height="10" rx="3"/><path d="M18 21l-7-6M30 21l7-6M18 27l-7 6M30 27l7 6M5 14h12M31 14h12M5 34h12M31 34h12"/>'},
+ {s:'판로확대',n:'공공판로 확대',c:['#e0508a','#b93068'],d:'현장에서 검증된 제품이 전국의 수요기관으로 퍼져 나갑니다.',
+  i:'<circle cx="24" cy="10" r="5"/><circle cx="9" cy="36" r="5"/><circle cx="39" cy="36" r="5"/><circle cx="24" cy="27" r="3"/><path d="M24 15v9M21.5 29L13 33.5M26.5 29l8.5 4.5"/>'},
+ {s:'해외진출',n:'G-PASS 해외진출',c:['#9a6bff','#6d3fd6'],d:'유망 조달기업이 G-PASS 기업이 되어 해외 조달시장에 도전합니다.',
+  i:'<circle cx="24" cy="24" r="17"/><path d="M7 24h34M24 7c-7 5-7 29 0 34M24 7c7 5 7 29 0 34"/>'}
+];
+const PTS=[0,0,20,50,120,300,700,1600,4000];
+const WHO=['지방정부','소방서','학교','보건소','국립공원','도서관','경찰서','공항'];
+const $=id=>document.getElementById(id);
+const board=$('board');
+const svg=lv=>'<svg viewBox="0 0 48 48">'+LV[lv].i+'</svg>';
+const grad=lv=>'linear-gradient(160deg,'+LV[lv].c[0]+','+LV[lv].c[1]+')';
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+let gen=0,cells,score,best=+store.get('pps.best',0)||0,maxLv,order,gap,over,exportsN,delivered,seen,snd=store.get('pps.snd','1')==='1';
+
+// 효과음: 파일 없이 브라우저에서 바로 합성한다.
+let ac,master,noiseBuf;
+function audio(){if(!snd)return null;try{if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const comp=ac.createDynamicsCompressor();master=ac.createGain();master.gain.value=.55;master.connect(comp);comp.connect(ac.destination);const n=ac.sampleRate*.3|0;noiseBuf=ac.createBuffer(1,n,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1}if(ac.state==='suspended')ac.resume();return ac}catch(e){return null}}
+function tone(f,d,type,when,vol,f2){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+(when||0);o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol||.2,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03)}
+function noise(d,freq,when,vol){const a=audio();if(!a)return;const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),t=a.currentTime+(when||0);s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=freq;f.Q.value=.8;g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+d+.03)}
+function beep(f,d,type,when){tone(f,d,type,when,.2)}
+function sfxSlide(){noise(.07,1700,0,.09)}
+// 단계마다 다른 소리: 공통의 "쿵" 위에 단계별 음색을 얹고, 높은 단계일수록 화려해진다.
+function sfxMerge(lv,k){const w=.09+k*.06;tone(170-lv*6,.16+lv*.012,'sine',w,.6,46);noise(.05,3200,w,.12);
+ if(lv===2)tone(520,.13,'sine',w,.24,980);                                                    // 연구개발: 보글 하는 방울
+ else if(lv===3){tone(330,.07,'square',w,.1);tone(440,.1,'square',w+.07,.1)}                  // 시제품: 똑딱 조립
+ else if(lv===4){tone(1047,.5,'sine',w+.02,.22);tone(2094,.35,'sine',w+.02,.07);tone(1568,.4,'sine',w+.03,.06)} // 혁신지정: 인증 종소리
+ else if(lv===5){noise(.04,6000,w,.1);tone(1319,.09,'square',w+.02,.09);tone(1760,.4,'square',w+.1,.08);tone(1760,.45,'sine',w+.1,.14)} // 시범구매: 계산대 소리
+ else if(lv===6){tone(180,.3,'sawtooth',w,.1,900);noise(.28,1200,w,.07);[523,659,784].forEach(f=>tone(f,.42,'triangle',w+.22,.13))} // 현장실증: 떠오르는 드론
+ else if(lv===7){[523,659,784,1047,1319].forEach((f,j)=>{tone(f,.3,'triangle',w+j*.06,.18);tone(f*2,.25,'sine',w+j*.06+.03,.06)});noise(.4,5000,w+.1,.05)} // 판로확대: 퍼져 나가는 화음
+ else if(lv===8){tone(70,.6,'sine',w,.7,35);noise(.5,800,w,.12);[392,523,659,784,1047].forEach((f,j)=>tone(f,.22,'square',w+.08+j*.08,.09));[523,659,784,1047,1568].forEach(f=>tone(f,1.1,'triangle',w+.5,.14));for(let j=0;j<8;j++)tone(1568+Math.random()*1800,.12,'sine',w+.6+j*.07,.07)} // 해외진출: 팡파르
+}
+function flash(c){const e=document.createElement('div');e.className='flashfx';e.style.background=c;board.appendChild(e);setTimeout(()=>e.remove(),600)}
+function banner(s){board.querySelectorAll('.banner').forEach(x=>x.remove());const e=document.createElement('div');e.className='combo banner';e.textContent=s;board.appendChild(e);setTimeout(()=>e.remove(),1500)}
+function confetti(n){const p=$('party'),cs=['#ffc857','#35d0ba','#9a6bff','#f47d48','#4a95e6','#e0508a','#ffffff'];for(let k=0;k<n;k++){const e=document.createElement('i');e.style.cssText='left:'+Math.random()*100+'%;background:'+cs[k%cs.length]+';animation-duration:'+(1.4+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(Math.random()*.5).toFixed(2)+'s;--q:'+(Math.random()*720-360|0)+'deg;--s:'+(Math.random()*40-20|0)+'vw';p.appendChild(e);setTimeout(()=>e.remove(),3600)}}
+function big(lv,nw){if(lv>=6)flash(LV[lv].c[0]);if(lv===8){banner('세계 시장 진출!');confetti(110)}else if(lv===7){banner('전국으로 판로 확대!');confetti(36)}else if(nw&&lv>=4)banner('새 단계 · '+LV[lv].n)}
+function buzz(p){try{if(snd&&navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+// 합쳐질 때의 시각 효과: 충격 고리, 불꽃, 떠오르는 점수
+function burst(i,lv,pts){const fx=document.createElement('div');fx.className='fx';fx.style.setProperty('--x',i%4);fx.style.setProperty('--y',i>>2);fx.style.setProperty('--c',LV[lv].c[0]);
+ let h='<div class="ring"></div>'+(lv>=4?'<div class="ring two"></div>':'');if(lv>=6)fx.classList.add('rich');const n=6+lv*3,far=board.clientWidth*(.1+lv*.012);for(let k=0;k<n;k++)h+='<i class="spark" style="--a:'+(360/n*k+Math.random()*20)+'deg;--d:'+(far*(.7+Math.random()*.6)).toFixed(0)+'px"></i>';
+ if(pts)h+='<div class="gain">+'+pts+'</div>';fx.innerHTML=h;board.appendChild(fx);setTimeout(()=>fx.remove(),850)}
+function shake(lv){const w=$('wrap');w.style.setProperty('--k',(lv>=8?15:2+lv)+'px');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake')}
+function combo(n){const e=document.createElement('div');e.className='combo';e.textContent=(n===2?'더블':n===3?'트리플':n+'연속')+' 합치기!';board.appendChild(e);setTimeout(()=>e.remove(),900)}
+
+function place(t,i){t.i=i;t.el.style.setProperty('--x',i%4);t.el.style.setProperty('--y',i>>2)}
+function paint(t){const f=t.el.firstChild;f.style.background=grad(t.lv);f.innerHTML=svg(t.lv)+'<span>'+LV[t.lv].s+'</span>'}
+function make(lv,i){const el=document.createElement('div');el.className='tile';el.innerHTML='<div class="face"></div>';const t={lv,el};el._t=t;paint(t);place(t,i);board.appendChild(el);cells[i]=t;return t}
+function spawn(){const e=[];for(let i=0;i<16;i++)if(!cells[i])e.push(i);if(!e.length)return;make(Math.random()<.9?1:2,e[Math.random()*e.length|0])}
+function pop(t){t.el.classList.remove('pop');void t.el.offsetWidth;t.el.classList.add('pop')}
+function line(dx,dy,k){const a=[];for(let j=0;j<4;j++)a.push(dx===1?k*4+3-j:dx===-1?k*4+j:dy===1?(3-j)*4+k:j*4+k);return a}
+
+function reset(){
+ board.innerHTML='';for(let i=0;i<16;i++){const s=document.createElement('div');s.className='slot';s.style.setProperty('--x',i%4);s.style.setProperty('--y',i>>2);board.appendChild(s)}
+ gen++;cells=Array(16).fill(null);score=0;maxLv=1;order=null;gap=4;over=false;exportsN=0;delivered=0;seen={1:true};
+ spawn();spawn();note('<b>같은 단계끼리 합쳐 키우세요</b>화면을 밀거나 방향키를 누르면 모든 제품이 움직입니다.');render();
+}
+function note(html,flash){const n=$('note');n.innerHTML=html.replace('</b>','</b> ');if(flash){n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash')}}
+function add(p){if(!p)return;score+=p;const e=document.createElement('i');e.className='plus';e.textContent='+'+p;$('scoreBox').appendChild(e);setTimeout(()=>e.remove(),800);if(score>best){best=score;store.set('pps.best',best)}}
+
+function move(dx,dy){
+ if(over)return;let moved=false,gain=0;const ups=[],g=gen;
+ for(let k=0;k<4;k++){const L=line(dx,dy,k),out=[];
+  for(const i of L){const t=cells[i];if(!t)continue;cells[i]=null;const last=out[out.length-1];
+   if(last&&last.lv===t.lv&&!last.m){last.m=true;last.lv++;ups.push(last);gain+=PTS[last.lv];moved=true;
+    place(t,L[out.length-1]);t.el.classList.add('under');setTimeout(()=>t.el.remove(),120)}
+   else out.push(t)}
+  out.forEach((t,j)=>{if(t.i!==L[j])moved=true;place(t,L[j]);cells[L[j]]=t})}
+ if(!moved){tone(120,.07,'sine',0,.18,80);return}
+ let top=0,fresh=0;
+ ups.forEach((t,k)=>{delete t.m;top=Math.max(top,t.lv);const nw=!seen[t.lv];if(nw){seen[t.lv]=true;fresh=Math.max(fresh,t.lv)}const lv=t.lv,at=t.i;sfxMerge(lv,k);setTimeout(()=>{if(g!==gen)return;paint(t);pop(t);burst(at,lv,PTS[lv]);big(lv,nw)},90+k*60)});
+ if(top>maxLv)maxLv=top;
+ if(ups.length>1){gain+=(ups.length-1)*30;setTimeout(()=>{if(g===gen)combo(ups.length)},120)}
+ add(gain);sfxSlide();
+ if(top){setTimeout(()=>shake(top),90);buzz(top>=5?[18,30,28]:12)}
+ if(order&&--order.left<=0){order=null;gap=5}
+ else if(!order){if(gap>0)gap--;else if(maxLv>=3)newOrder()}
+ spawn();
+ for(const t of ups)if(t.lv===8){cells[t.i]=null;exportsN++;setTimeout(()=>t.el.classList.add('fly'),750);setTimeout(()=>t.el.remove(),1400);buzz([30,40,30,40,60])}
+ if(fresh)note('<b>'+LV[fresh].n+'</b>'+LV[fresh].d,true);
+ render();
+ if(isOver()){over=true;setTimeout(end,700)}
+}
+function newOrder(){const hi=Math.min(6,Math.max(3,maxLv)),lo=hi>=5?3:2,lv=lo+(Math.random()*(hi-lo+1)|0);order={who:WHO[Math.random()*WHO.length|0],lv,left:8+lv*2};beep(880,.08,'sine');beep(1175,.12,'sine',.09);
+ if(!store.get('pps.hint')){store.set('pps.hint','1');note('<b>수요기관 요청이 왔어요</b>판에서 금색으로 빛나는 제품을 누르면 납품됩니다.',true)}}
+function deliver(t){
+ if(over||!order||t.lv!==order.lv)return;const p=PTS[t.lv]+30;cells[t.i]=null;t.el.classList.remove('want');t.el.classList.add('deliver');setTimeout(()=>t.el.remove(),340);
+ delivered++;add(p);note('<b>'+order.who+'에 납품 완료</b>'+LV[t.lv].n+' 단계 제품이 현장에서 쓰입니다. +'+p+'점',true);burst(t.i,t.lv,p);order=null;gap=6;noise(.06,2600,0,.12);[660,880,1320].forEach((f,j)=>tone(f,.18,'triangle',j*.07,.22));buzz(15);render();
+}
+function isOver(){
+ for(let i=0;i<16;i++){const t=cells[i];if(!t)return false;if(order&&t.lv===order.lv)return false;
+  if(i%4<3&&cells[i+1]&&cells[i+1].lv===t.lv)return false;if(i<12&&cells[i+4]&&cells[i+4].lv===t.lv)return false}
+ return true;
+}
+function render(){
+ $('score').textContent=score.toLocaleString();$('best').textContent=best.toLocaleString();
+ for(const t of cells)if(t)t.el.classList.toggle('want',!!order&&t.lv===order.lv);
+ const o=$('order');o.classList.toggle('on',!!order);
+ if(order)o.innerHTML='<div class="ic" style="background:'+grad(order.lv)+'">'+svg(order.lv)+'</div><div class="tx"><b>'+order.who+'의 요청</b><span>‘'+LV[order.lv].n+'’ 제품을 눌러 납품하세요</span></div><div class="left"><b>'+order.left+'</b>남은 이동</div>';
+ else o.innerHTML='<div class="ic">'+svg(5)+'</div><div class="tx"><b>수요기관 요청 대기 중</b><span>'+(maxLv<3?'시제품까지 키우면 요청이 들어옵니다':'곧 새 요청이 들어옵니다')+'</span></div>';
+ let h='';for(let lv=1;lv<=8;lv++)h+='<button data-lv="'+lv+'" class="'+(seen[lv]?'got':'')+(lv===maxLv?' top':'')+'"'+(seen[lv]?' style="background:'+grad(lv)+'"':'')+' aria-label="'+LV[lv].n+'">'+svg(lv)+'</button>';
+ $('steps').innerHTML=h;
+}
+
+function show(html){$('sheet').innerHTML=html;$('modal').classList.add('on');const g=$('sheet').querySelector('.go');if(g)g.onclick=()=>{hide();if(g.dataset.act==='new')reset()}}
+function hide(){$('modal').classList.remove('on')}
+function help(){show('<h2>'+TITLE+'</h2><p>작은 아이디어가 정부의 첫 구매와 현장 실증을 거쳐 세계 시장으로 나아가는 길을 따라가 보세요.</p><ul>'+
+ '<li><b>밀기</b> · 화면을 밀거나 방향키를 누르면 모든 제품이 한쪽으로 움직입니다.</li>'+
+ '<li><b>합치기</b> · 같은 단계 두 개가 만나면 다음 단계로 자랍니다.</li>'+
+ '<li><b>납품</b> · 수요기관 요청이 뜨면 빛나는 제품을 눌러 납품하세요. 점수를 얻고 자리가 생깁니다.</li>'+
+ '<li><b>해외진출</b> · 마지막 단계에 오르면 세계 시장으로 떠나며 큰 점수를 줍니다.</li></ul>'+
+ '<p>판이 가득 차 더 움직일 수 없으면 끝납니다.</p><p class="fine">게임의 단계와 순서는 조달정책의 이해를 돕기 위한 가상 설정이며 실제 제도의 절차와 다를 수 있습니다.</p><button class="go">시작하기</button>')}
+function info(lv){show('<div class="hero" style="background:'+grad(lv)+'">'+svg(lv)+'</div><h2>'+lv+'단계 · '+LV[lv].n+'</h2><p>'+LV[lv].d+'</p><button class="go">닫기</button>')}
+function end(){
+ const rank=score>=20000?'혁신조달의 달인':score>=8000?'든든한 첫 구매자':score>=3000?'혁신 지원관':'조달 새내기';
+ beep(196,.3,'sine');
+ show('<p class="fine">오늘의 성과 · '+rank+'</p><div class="big">'+score.toLocaleString()+'</div><div class="stat"><div><b>'+LV[maxLv].s+'</b>최고 단계</div><div><b>'+delivered+'건</b>납품</div><div><b>'+exportsN+'개</b>해외진출</div></div><p>'+LV[maxLv].d+'</p><button class="go" data-act="new">다시 하기</button>');
+}
+
+addEventListener('keydown',e=>{
+ if($('modal').classList.contains('on')){if(e.key==='Enter'||e.key==='Escape'){const g=$('sheet').querySelector('.go');if(g)g.click()}return}
+ const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]}[e.key.length===1?e.key.toLowerCase():e.key];
+ if(m){e.preventDefault();move(m[0],m[1])}
+});
+let start=null;
+board.addEventListener('pointerdown',e=>{const el=e.target.closest('.tile');start={x:e.clientX,y:e.clientY,t:el&&el._t};try{board.setPointerCapture(e.pointerId)}catch(_){}});
+board.addEventListener('pointerup',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y,t=start.t;start=null;
+ if(Math.max(Math.abs(dx),Math.abs(dy))<18){if(t)deliver(t);return}
+ if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1,0);else move(0,dy>0?1:-1)});
+board.addEventListener('pointercancel',()=>{start=null});
+$('steps').addEventListener('click',e=>{const b=e.target.closest('button');if(b)info(+b.dataset.lv)});
+$('bNew').onclick=reset;$('bHelp').onclick=help;
+function sndLabel(){$('bSnd').textContent=snd?'소리 켬':'소리 끔'}
+$('bSnd').onclick=()=>{snd=!snd;store.set('pps.snd',snd?'1':'0');sndLabel();beep(660,.08)};
+document.title=TITLE;$('title').textContent=TITLE;sndLabel();reset();help();
+</script>
+</body>
+</html>
