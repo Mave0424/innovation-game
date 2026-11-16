@@ -326,7 +326,7 @@ function upd(dt){
   items.push({k,x:8+rnd()*(W-28),y:56,v:(c.fall+(endless?0:ordI*4))*(.85+rnd()*.4),amp:bgI>=2||endless&&ordI>3?8+rnd()*14:0,ph:rnd()*6})}
  const by=GY-22;
  for(const it of items){it.y+=it.v*dt;
-  if(it.gold){if(it.y>110)it.x+=(P.x-6-it.x)*Math.min(1,dt*3)}else if(it.amp)it.x=Math.max(2,Math.min(W-14,it.x+Math.cos(clock*2.6+it.ph)*it.amp*2.6*dt));
+  if(!it.gold&&it.amp)it.x=Math.max(2,Math.min(W-14,it.x+Math.cos(clock*2.6+it.ph)*it.amp*2.6*dt));
   if(!it.dead&&it.y+12>=by&&it.y+12<=by+13&&Math.abs(it.x+6-P.x)<18){it.dead=true;catchIt(it)}
   if(it.y>GY-6&&!it.dead){it.dead=true;burst(it.x+6,GY-2,[it.gold?'#ffd34d':'#9aa7c7'],3,50)}}
  items=items.filter(i=>!i.dead);
