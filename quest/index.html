@@ -236,7 +236,11 @@ function drawPortal(t){const cx=W/2,cy=GY-74;for(let i=0;i<6;i++){const r=34-i*5
 // ---------- 상태 ----------
 let state='menu',ch=0,ordI=0,order=null,score=0,chScore=0,hearts=3,combo=0,mist=0,gauge=0,feverT=0,fc=0,freeze=0,shakeT=0,flashT=0,flashD=1,flashC='#fff',clock=0,spawnT=0,clean=true,big=null,portal=false,N=null;
 const P={x:W/2,tx:W/2,dir:0,bounce:0,stack:[],big:null};
-let items=[],parts=[],timers=[];
+let items=[],parts=[],timers=[],fx=[],edgeT=0,edgeD=1,edgeC='#fff';
+function ring(x,y,c,r,l,d){fx.push({x,y,c,r,l,t:-(d||0)})}
+function beam(x,c,l){fx.push({beam:1,x,c,l,t:0})}
+function edge(c,d){edgeC=c;edgeD=edgeT=d}
+function stars8(x,y,c){for(let i=0;i<8;i++){const a=i*Math.PI/4;parts.push({x,y,vx:Math.cos(a)*150,vy:Math.sin(a)*150-60,c:i%2?c:'#fff',t:0,l:.4,s:2})}}
 const FEVER=6,GAUGE_N=8;
 let endless=false,bgI=0,slow=0,punch=0,tickN=0,lastMult=1,lastScore=0;
 const EC={t:'도전',n:'끝없는 납품',pool:[],bad:.1,fall:62,gap:.62,bpm:.15,tr:0,big:'bus',bigN:'통학버스',orders:[]};
@@ -249,13 +253,13 @@ function banner(text){const b=$('banner');b.textContent=text;b.classList.remove(
 function flash(c,d){flashC=c;flashD=flashT=d}
 function burst(x,y,cols,n,pow){for(let i=0;i<n;i++)parts.push({x,y,vx:(rnd()-.5)*pow,vy:-rnd()*pow*.9-20,c:cols[i%cols.length],t:0,l:.35+rnd()*.45,s:rnd()<.35?2:1})}
 function hudTop(){let h='';for(let i=0;i<3;i++)h+='<i class="'+(i<hearts?'':'off')+'">♥</i>';$('hearts').innerHTML=h}
-function hurt(text,x,y){hearts--;mist++;combo=0;clean=false;gauge=Math.max(0,gauge-.25);shakeT=.35;flash('#ff2a4a',.3);hudTop();pop(text,x,y,'bad');sfx.bad();buzz(80)}
+function hurt(text,x,y){edge('#ff2a4a',.5);ring(P.x,GY-24,'#ff2a4a',44,.4);hearts--;mist++;combo=0;clean=false;gauge=Math.max(0,gauge-.25);shakeT=.35;flash('#ff2a4a',.3);hudTop();pop(text,x,y,'bad');sfx.bad();buzz(80)}
 function panel(){const o=order,c=C();
  if(!o){$('panel').innerHTML='<span class="tip">'+(big||P.big?'대형 납품: '+c.bigN+'!':'주문서를 기다리는 중…')+'</span>';return}
  $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(endless?'납품 '+ordI:(ordI+1)+'/'+c.orders.length)+'</span>'}
 
 // ---------- 진행 ----------
-function resetPlay(){state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=0;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
+function resetPlay(){fx=[];edgeT=0;state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=0;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
  $('ov').hidden=true;$('talk').hidden=true;$('hud').hidden=false;$('pad').hidden=false;hudTop()}
 function startCh(){const c=CH[ch];endless=false;bgI=ch;chScore=score;resetPlay();$('chap').textContent=c.t+' · '+c.n;panel();banner(c.t+' '+c.n);later(1.4,nextOrder)}
 function startEndless(){endless=true;bgI=0;ch=0;score=0;hearts=3;mist=0;P.x=P.tx=W/2;resetPlay();$('chap').textContent='끝없는 납품';panel();banner('끝없는 납품!');later(1.2,nextOrder)}
@@ -270,10 +274,12 @@ function orderDone(){let b=(50+ch*20+ordI*10)*mult();if(clean)b*=2;score+=b;orde
  banner((clean?'완벽 납품! +':'납품 완료! +')+b);sfx.done();buzz([20,30,40]);
  for(const it of items)if(!it.gold)burst(it.x+6,it.y+6,['#fff','#9aa7c7'],4,60);items=items.filter(i=>i.gold);
  burst(P.x,GY-30,['#ffd34d','#ff4d6a','#35b8f0','#fff','#2fb36b'],28,180);
+ for(let i=0;i<4;i++)ring(P.x,GY-30,['#ffffff','#ffd34d','#35b8f0','#ff4d6a'][i],60+i*30,.6,i*.08);beam(P.x,'#ffd34d',.6);edge('#ffd34d',.6);
  N={t:0,px:P.x};later(.45,()=>{P.stack=[]});later(1.6,()=>{ordI++;order=null;if(endless&&ordI%5===0)startBig();else nextOrder()});panel()}
 function startBig(){order=null;if(endless){const ks=Object.keys(BIG);EC.big=ks[rnd()*ks.length|0];EC.bigN=BIGN[EC.big]}panel();banner('대형 납품!');sfx.warn();later(1.3,()=>{big={k:C().big,cx:50+rnd()*80,x:0,y:40,t:0};panel()})}
 function bigCaught(){const c=C(),bp=300*mult();P.big=big.k;big=null;score+=bp;freeze=.22;slow=.5;punch=.14;flash('#ffffff',.35);shakeT=.5;
  burst(P.x,GY-40,['#ffd34d','#ff4d6a','#35b8f0','#fff','#2fb36b','#ff4db8'],48,240);
+ for(let i=0;i<6;i++)ring(P.x,GY-40,['#ffffff','#ffd34d','#ff4db8','#35b8f0','#2fb36b','#ffffff'][i],50+i*34,.8,i*.09);beam(P.x,'#ffffff',.9);edge('#ffffff',.9);for(let i=0;i<3;i++)stars8(30+i*60,90+i*40,'#ffd34d');
  pop('+'+bp,P.x,GY-70,'gold huge');banner(c.bigN+' 납품 성공!');sfx.big();buzz([40,40,80]);panel();later(2.1,endless?()=>{P.big=null;if(hearts<3){hearts++;hudTop();sfx.heart();pop('♥ +1',W/2,60,'bad')}nextOrder()}:chapterClear)}
 function chapterClear(){timers=[];items=[];P.dir=0;feverT=0;gauge=0;
  if(hearts<3){hearts++;hudTop();sfx.heart();pop('♥ +1',W/2,60,'bad')}
@@ -301,12 +307,14 @@ $('skip').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefaul
 
 // ---------- 놀이 ----------
 function catchIt(it){const by=GY-24;P.bounce=.14;
- if(it.gold){fc++;const gp=20*mult();score+=gp;punch=Math.max(punch,.025);pop('+'+gp,it.x+6,by-10,'gold');sfx.gold(fc);burst(it.x+6,by,['#ffd34d','#fff3b0','#fff'],7,120);buzz(6);return}
+ if(it.gold){fc++;const gp=20*mult();score+=gp;punch=Math.max(punch,.025);pop('+'+gp,it.x+6,by-10,'gold');sfx.gold(fc);burst(it.x+6,by,['#ffd34d','#fff3b0','#fff'],7,120);ring(it.x+6,by,'#ffd34d',20,.25);beam(it.x+6,'#ffd34d',.18);edge('#ffd34d',.15);buzz(6);return}
  if(it.k==='bad'){hurt('불량품!',it.x+6,by-10);return}
  const o=order;if(!o||o.done)return;
  if(o.need[it.k]>0){o.need[it.k]--;combo++;const m=mult(),perf=Math.abs(it.x+6-P.x)<4.5,p=10*m*(perf?2:1);score+=p;P.stack.push(it.k);gauge=Math.min(1,gauge+(perf?1.5:1)/GAUGE_N);
   pop((perf?'퍼펙트! +':'+')+p,it.x+6,by-10,perf||m>1?'gold':'');if(combo%5===0)pop(combo<=20?'배율 x'+m+'!':combo+'콤보!',W/2,130,'gold huge');
   sfx.get(combo);if(perf)sfx.perf();buzz(perf?18:10);freeze=perf?.07:.05;punch=perf?.06:.035;burst(it.x+6,by,ITEMS[it.k].c.concat('#fff'),perf?18:10,perf?190:140);if(perf)flash('#ffffff',.1);
+  {const c0=ITEMS[it.k].c[0],cx=it.x+6;ring(cx,by,c0,perf?54:34,.35);ring(cx,by,'#ffffff',perf?40:24,.28,.05);beam(cx,perf?'#ffffff':c0,perf?.35:.25);edge(perf?'#ffffff':c0,perf?.3:.2);
+   if(perf||m>=3){ring(cx,by,'#ffd34d',perf?78:56,.5,.08);stars8(cx,by-6,'#ffd34d')}}
   if(Object.values(o.need).every(v=>v===0))orderDone();else panel()}
  else hurt(o.need[it.k]===0?'딱 필요한 만큼만!':'주문에 없는 물건!',it.x+6,by-10)}
 function feverX(){return W/2-13+Math.sin(clock*2.4)*64}
@@ -354,7 +362,12 @@ function draw(){
   else if(feverT>0)narmi(feverX(),50,fl);
   else if(N){const t=N.t;let nx,ny;if(t<.45){const e=t/.45;nx=-30+(N.px-13+30)*e;ny=90+(GY-66-90)*e*e}else{const e=(t-.45)/1.05;nx=N.px-13+(W+40-N.px)*e;ny=GY-66-(GY-110)*e*e}
    narmi(nx,ny,fl);if(t>=.45){R('#5c3716',nx+6,ny+24,14,2);R('#a8672f',nx+7,ny+26,12,8);R('#ffd34d',nx+12,ny+26,2,8)}}
+  for(const e of fx){if(e.t<0)continue;const k=e.t/e.l;
+   if(e.beam){g.globalAlpha=(1-k)*.45;const w=22*(1-k*.6);R(e.c,e.x-w/2,0,w,GY-20);g.globalAlpha=(1-k)*.7;R('#ffffff',e.x-w/6,0,w/3,GY-20)}
+   else{const r=e.r*(1-(1-k)*(1-k));g.globalAlpha=1-k;g.strokeStyle=e.c;g.lineWidth=k<.5?3:2;g.beginPath();g.arc(e.x,e.y,r,0,7);g.stroke()}}
+  g.globalAlpha=1;
   for(const p of parts)R(p.c,p.x,p.y,p.s,p.s);
+  if(edgeT>0){const a=Math.max(0,edgeT/edgeD);for(let i=0;i<5;i++){g.globalAlpha=a*(.55-i*.1);const o=i*3;R(edgeC,o,o,W-2*o,3);R(edgeC,o,H-3-o,W-2*o,3);R(edgeC,o,o,3,H-2*o);R(edgeC,W-3-o,o,3,H-2*o)}g.globalAlpha=1}
   if(feverT>0){const a=.25+.2*Math.sin(clock*18);g.globalAlpha=a;R('#ffd34d',0,0,W,3);R('#ffd34d',0,H-3,W,3);R('#ffd34d',0,0,3,H);R('#ffd34d',W-3,0,3,H);g.globalAlpha=1}
  }
  g.restore();
@@ -381,7 +394,7 @@ function frame(ts){let dt=Math.max(0,Math.min(.05,(ts-last)/1000||0));last=ts;if
  if(shakeT>0)shakeT-=dt;if(flashT>0)flashT-=dt;
  if(freeze>0)freeze-=dt;
  else{if(state==='play')upd(dt);
-  for(const p of parts){p.t+=dt;p.vy+=300*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.t<p.l)}
+  for(const p of parts){p.t+=dt;p.vy+=300*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.t<p.l);for(const e of fx)e.t+=dt;fx=fx.filter(e=>e.t<e.l);if(edgeT>0)edgeT-=dt}
  if(state==='talk'&&tl){const l=tl[ti][1];if(tn<l.length){tn=Math.min(l.length,tn+dt*45);$('ttext').textContent=l.slice(0,tn|0)}}
  draw();
  if(state==='play'){if(score!==lastScore){lastScore=score;const e=$('score');e.textContent=score.toLocaleString();e.classList.remove('b');void e.offsetWidth;e.classList.add('b')}
