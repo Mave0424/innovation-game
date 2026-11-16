@@ -50,10 +50,16 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #ttext{font-size:calc(var(--u)*4.3);line-height:1.5;font-weight:600;word-break:keep-all}
 #tnext{position:absolute;right:calc(var(--u)*3);bottom:calc(var(--u)*1.6);font-size:calc(var(--u)*3);color:#ffd34d;animation:glow .5s linear infinite alternate}
 #skip{position:absolute;right:0;top:calc(var(--u)*-11);background:rgba(8,14,44,.9);border:2px solid #5b6aa0;border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.6) calc(var(--u)*3);font-size:calc(var(--u)*3.4);color:#c9d4f2}
+#tut{position:absolute;left:calc(var(--u)*3);right:calc(var(--u)*3);top:calc(var(--u)*36);background:rgba(8,14,44,.9);border:2px solid #ffd34d;border-radius:calc(var(--u)*3);padding:calc(var(--u)*2.4) calc(var(--u)*3);pointer-events:none;text-align:left}
+#tut[hidden]{display:none}
+#tutn{display:block;color:#ffd34d;font-weight:900;font-size:calc(var(--u)*3.6);margin-bottom:calc(var(--u)*.6)}
+#tutt{display:block;font-size:calc(var(--u)*4);line-height:1.45;font-weight:700;word-break:keep-all}
+#tutskip{pointer-events:auto;position:absolute;right:0;top:calc(var(--u)*-1);transform:translateY(-100%);background:rgba(8,14,44,.9);border:2px solid #5b6aa0;border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.2) calc(var(--u)*2.6);font-size:calc(var(--u)*3.2);color:#c9d4f2;display:none}
 #bar{flex:none;height:var(--bar);width:min(100vw,calc((100vh - var(--bar) - var(--sab))*9/16));width:min(100vw,calc((100dvh - var(--bar) - var(--sab))*9/16));display:flex;align-items:center;justify-content:flex-end;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 14px;background:#070b1c;touch-action:none;-webkit-user-select:none;user-select:none}
 #lb{margin-right:auto;display:flex;gap:8px}
 #mute,#pz{background:#141c3f;border:2px solid #35467a;border-radius:12px;padding:10px 10px;font-size:13px;color:#a9b8de}
-#pz[hidden]{display:none}
+#pz[hidden],#tsk[hidden]{display:none}
+#tsk{background:#141c3f;border:2px solid #7a6a2a;border-radius:12px;padding:10px 10px;font-size:13px;color:#ffd34d}
 #pad{display:flex;gap:14px}
 #pad[hidden]{display:none}
 #pad button{width:calc(var(--bar) - 18px);height:calc(var(--bar) - 18px);border-radius:50%;background:rgba(53,184,240,.3);border:3px solid rgba(127,216,255,.9);color:#fff;font-size:calc(var(--bar)*.36);font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none}
@@ -112,9 +118,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
   <div id="pops"></div>
   <div id="banner"></div>
   <div id="talk" hidden><img id="face" alt=""><div class="tx"><b id="tname"></b><span id="ttext"></span></div><button id="skip">건너뛰기</button><span id="tnext">▼ 누르면 다음</span></div>
+  <div id="tut" hidden><b id="tutn"></b><span id="tutt"></span></div>
   <div id="ov"></div>
 </div>
-<div id="bar"><div id="lb"><button id="mute">소리 켬</button><button id="pz" hidden>멈춤</button></div><div id="pad" hidden></div></div>
+<div id="bar"><div id="lb"><button id="mute">소리 켬</button><button id="pz" hidden>멈춤</button><button id="tsk" hidden>연습 건너뛰기</button></div><div id="pad" hidden></div></div>
 <script>
 'use strict';
 // 달이의 조달 퀘스트. 그림과 소리는 모두 코드로 만든다(외부 파일 없음).
@@ -316,7 +323,9 @@ let mod={bad:0,lim:1,bonus:1},innov=null,bidPick=null,why={over:0,wrong:0,bad:0,
 let endless=false,bgI=0,slow=0,punch=0,tickN=0,lastMult=1,lastScore=0;
 const EC={t:'도전',n:'끝없는 납품',pool:[],bad:.1,fall:62,gap:.62,bpm:.15,tr:0,big:'bus',bigN:'통학버스',orders:[]};
 const BIGN={bus:'통학버스',heli:'산불 진압 헬리콥터',sat:'인공위성',taxi:'에어택시'},WHO=['학교','소방서','보건소','도서관','주민센터','경찰서','우체국','시청','연구소','달 기지'];
-function C(){return endless?EC:CH[ch]}
+let tut=null;
+const TC={t:'연습',n:'연습',pool:['eraser','desk','pc'],bad:0,fall:46,gap:1.2,bpm:.16,tr:0,big:'bus',bigN:'통학버스',orders:[]};
+function C(){return tut?TC:endless?EC:CH[ch]}
 function ords(){const c=C();return !endless&&ch===2&&innov?c.orders.concat([['시범사용 현장',{drone:2,robot:2,solar:2}]]):c.orders}
 function mult(){return Math.min(5,1+(combo/5|0))}
 function later(t,fn){timers.push({t,fn})}
@@ -325,10 +334,10 @@ function banner(text){const b=$('banner');b.textContent=text;b.classList.remove(
 function flash(c,d){flashC=c;flashD=flashT=d}
 function burst(x,y,cols,n,pow){for(let i=0;i<n;i++)parts.push({x,y,vx:(rnd()-.5)*pow,vy:-rnd()*pow*.9-20,c:cols[i%cols.length],t:0,l:.35+rnd()*.45,s:rnd()<.35?2:1})}
 function hudTop(){let h='';for(let i=0;i<3;i++)h+='<i class="'+(i<hearts?'':'off')+'">♥</i>';$('hearts').innerHTML=h}
-function hurt(text,x,y,kind){if(kind)why[kind]++;edge('#ff2a4a',.5);ring(P.x,GY-24,'#ff2a4a',44,.4);hearts--;mist++;combo=0;clean=false;gauge=Math.max(0,gauge-.25);shakeT=.35;flash('#ff2a4a',.3);hudTop();pop(text,x,y,'bad');sfx.bad();buzz(80)}
+function hurt(text,x,y,kind){if(tut){tutFail(text,x,y);return}if(kind)why[kind]++;edge('#ff2a4a',.5);ring(P.x,GY-24,'#ff2a4a',44,.4);hearts--;mist++;combo=0;clean=false;gauge=Math.max(0,gauge-.25);shakeT=.35;flash('#ff2a4a',.3);hudTop();pop(text,x,y,'bad');sfx.bad();buzz(80)}
 function panel(){const o=order,c=C();
- if(!o){$('panel').innerHTML='<span class="tip">'+(big||P.big?'대형 납품: '+c.bigN+'!':'나라장터 주문서를 기다리는 중…')+'</span>';return}
- $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
+ if(!o){$('panel').innerHTML='<span class="tip">'+(big||P.big?'대형 납품: '+c.bigN+'!':(tut?'연습 중이에요':'나라장터 주문서를 기다리는 중…'))+'</span>';return}
+ $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(tut?'연습':endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
 
 // ---------- 진행 ----------
 function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=0;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
@@ -342,7 +351,7 @@ function endlessOrder(){const n=ordI;bgI=(n/3|0)%4;const ws=Object.keys(WHOP),wh
  Object.assign(EC,{pool:Object.keys(need).concat(others),fall:Math.min(128,64+n*4),gap:Math.max(.32,.6-n*.018),bad:Math.min(.24,.08+n*.012),bpm:Math.max(.1,.15-n*.003),tr:CH[bgI].tr});
  return [who,need]}
 function nextOrder(){const c=C();if(!endless&&ordI>=ords().length){startBig();return}
- const o=endless?endlessOrder():ords()[ordI];order={who:o[0],need:Object.assign({},o[1]),done:false};const tot=Object.values(order.need).reduce((a,b)=>a+b,0);guide=!endless&&ch===0&&ordI===0;guideWarn=false;dry=2;order.lim=order.t=(5+tot*(endless?Math.max(1.15,1.8-ordI*.03):1.8))*(endless?1:mod.lim)*(guide?1.6:1);tickN=0;clean=true;P.stack=[];spawnT=.5;panel();banner(o[0]+' 주문!');sfx.order();
+ const o=endless?endlessOrder():ords()[ordI];order={who:o[0],need:Object.assign({},o[1]),done:false};const tot=Object.values(order.need).reduce((a,b)=>a+b,0);guide=false;guideWarn=false;dry=2;order.lim=order.t=(5+tot*(endless?Math.max(1.15,1.8-ordI*.03):1.8))*(endless?1:mod.lim)*(guide?1.6:1);tickN=0;clean=true;P.stack=[];spawnT=.5;panel();banner(o[0]+' 주문!');sfx.order();
  if(!endless&&ch===0&&ordI===0)later(1.5,()=>pop('금색 테두리만 받아요!',W/2,96,'gold'))}
 function orderDone(){let b=(50+ch*20+ordI*10)*mult();if(clean)b*=2;if(!endless)b=Math.round(b*mod.bonus);score+=b;order.done=true;freeze=.12;slow=.35;punch=.09;flash('#ffffff',.22);shakeT=.2;
  banner((clean?'완벽 납품! +':'납품 완료! +')+b);sfx.done();buzz([20,30,40]);
@@ -390,6 +399,31 @@ function verdict(gr,title,eff,cb){state='verdict';vCb=cb;vAt=performance.now();c
   if(gr===3){flash('#ffd34d',.45);sfx.done();sfx.perf();buzz([30,40,60]);for(let i=0;i<5;i++)burst(20+i*35,110+((i*37)%50),['#ffd34d','#ff4d6a','#35b8f0','#fff','#2fb36b'],16,220);for(let i=0;i<4;i++)ring(W/2,130,['#ffffff','#ffd34d','#35b8f0','#ff4d6a'][i],70+i*30,.7,i*.08);edge('#ffd34d',.8)}
   else if(gr===2){flash('#9fd0ff',.2);tone(440,.16,'triangle',0,.14);tone(392,.3,'triangle',.16,.14);buzz(20);ring(W/2,130,'#9fd0ff',60,.5)}
   else{flash('#ff2a4a',.5);sfx.bad();sfx.late();buzz([80,40,80]);edge('#ff2a4a',.9);ring(W/2,130,'#ff2a4a',90,.6);burst(W/2,130,['#ff2a4a','#6b6f76','#30343d'],24,200)}},280)}
+const TUT=['아래 ◀ ▶ 버튼(또는 화면 밀기)으로 달이를 왼쪽 끝과 오른쪽 끝까지 움직여 보세요.','위쪽이 주문서예요. 금색 테두리가 있는 물건이 주문받은 물건이에요. 지우개 2개를 받아 보세요.','주문에 없는 물건과 X 표시 불량품을 받으면 하트를 잃어요. 내려오는 3개를 피해 보세요.','딱 필요한 만큼만! 지우개 1개를 받은 뒤, 더 내려오는 지우개 2개는 피해 보세요.','주문서 아래 초록 막대가 기한이에요. 막대가 다 줄기 전에 컴퓨터 2개를 받아 보세요.','잘 받으면 게이지가 차서 특급 조달 타임이 와요. 이때 금색 상자는 전부 받아도 돼요!'];
+const TUTEND=[['n','잘했어! 하나 더. 수레 한가운데로 받으면 퍼펙트, 실수 없이 이어 받으면 점수 배율이 올라가.'],['n','장 사이에는 납품할 업체나 제품을 고르게 돼. 값만 보지 말고 품질과 납기도 함께 봐. ■가 고르게 많은 쪽이 좋은 선택이야.'],['n','준비 끝! 이제 진짜 주문을 받으러 가자.']];
+function ask(){state='ask';const o=$('ov');o.className='';o.innerHTML='<h2>처음이신가요?</h2><p>게임 방법을 직접 해 보면서 알려 드릴게요.<br>1분쯤 걸려요.</p><button class="btn" data-go="tutY">네, 알려 주세요</button><button class="btn sub" data-go="tutN">아니요, 바로 시작할게요</button>';o.hidden=false}
+function tutorial(){endless=false;ch=0;bgI=0;hearts=3;score=0;P.x=P.tx=W/2;tut={s:-1,c:0,t:0,w:1,n:0};resetPlay();$('chap').textContent='연습';$('tut').hidden=false;$('tsk').hidden=false;tutStep(0)}
+function tutSpawn(k,x,warn){items.push({k,warn:!!warn,x:Math.max(8,Math.min(W-20,x)),y:56,v:TC.fall,amp:0,ph:0})}
+function tutStep(i){const T=tut;if(!T)return;T.s=i;T.c=0;T.t=0;T.w=1;T.l=T.r=0;T.fv=0;T.busy=false;items=items.filter(it=>it.gold);gauge=0;guide=i>=1&&i<=4;
+ if(i>=TUT.length){tutEnd(false);return}
+ const need=i===4?{pc:2}:i===3?{eraser:1}:{eraser:2};order=i===0?null:{who:'연습',need,done:false,lim:i===4?13:99,t:i===4?13:99};if(i===5)gauge=1;
+ $('tutn').textContent='연습 '+(i+1)+'/'+TUT.length;$('tutt').textContent=TUT[i];panel();sfx.order()}
+function tutOk(){const T=tut;if(!T||T.busy)return;T.busy=true;sfx.done();flash('#ffd34d',.25);pop('좋아요!',W/2,170,'gold huge');burst(P.x,GY-30,['#ffd34d','#ff4d6a','#35b8f0','#fff','#2fb36b'],24,180);for(let i=0;i<3;i++)ring(P.x,GY-30,['#ffffff','#ffd34d','#35b8f0'][i],50+i*26,.5,i*.08);later(1.3,()=>{if(tut)tutStep(tut.s+1)})}
+function tutFail(text,x,y){const T=tut;combo=0;shakeT=.3;edge('#ff2a4a',.4);flash('#ff2a4a',.2);sfx.bad();buzz(60);pop(text,x,y,'bad');if(T.s===2||T.s===3){T.c=0;later(.7,()=>pop('괜찮아요. 다시 피해 봐요!',W/2,170,'dim'))}}
+function tutMiss(it){const T=tut;if(!T||T.busy||it.gold)return;
+ if(T.s===2){T.c++;pop('잘 피했어요! '+T.c+'/3',W/2,170,'gold');if(T.c>=3)tutOk()}
+ else if(T.s===3&&order&&order.need.eraser===0){T.c++;pop('잘 피했어요! '+T.c+'/2',W/2,170,'gold');if(T.c>=2)tutOk()}}
+function tutFilled(){const T=tut;panel();if(T.s===1||T.s===4)tutOk();else if(T.s===3)T.w=1.3}
+function tutUpd(dt){const T=tut;T.t+=dt;if(T.s<5)gauge=0;T.w-=dt;
+ if(T.s===0){if(P.x<46)T.l=1;if(P.x>W-46)T.r=1;if(T.l&&T.r)tutOk()}
+ else if(T.s===1){if(T.w<=0){T.w=1.7;tutSpawn('eraser',20+rnd()*(W-50))}}
+ else if(T.s===2){if(T.w<=0){T.w=2;tutSpawn(T.n++%2?'bad':'desk',P.x-6,true)}}
+ else if(T.s===3){if(T.w<=0){T.w=2;const more=order.need.eraser>0;tutSpawn('eraser',more?20+rnd()*(W-50):P.x-6,!more)}}
+ else if(T.s===4){if(T.w<=0){T.w=1.2;tutSpawn(rnd()<.6?'pc':'desk',20+rnd()*(W-50))}order.t-=dt;if(order.t<=0){order.t=order.lim;pop('기한이 지났어요. 다시!',W/2,170,'bad');sfx.late()}}
+ else if(T.s===5){if(feverT>0)T.fv=1;else if(T.fv)tutOk()}}
+function tutEnd(skip){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;items=[];parts=[];fx=[];timers=[];order=null;feverT=0;gauge=0;score=0;mist=0;combo=0;hearts=3;P.dir=0;$('hud').hidden=true;$('mult').textContent='';lastMult=1;
+ if(skip)talk(0,startCh);else talk(TUTEND,()=>talk(0,startCh))}
+$('tsk').addEventListener('click',()=>{audio();if(tut&&state==='play'&&!paused)tutEnd(true)});
 function pause(){if(state!=='play'||paused)return;paused=true;P.dir=0;const o=$('ov');o.className='';o.innerHTML='<h1>잠깐 멈춤</h1><button class="btn" data-go="resume">계속하기</button><button class="btn sub" data-go="menu">처음으로</button>';o.hidden=false}
 function gameOver(){state='over';timers=[];P.dir=0;$('pad').hidden=true;sfx.end();
  if(endless){const old=+store.get('pps.quest.endless',0)||0,nb=score>old;if(nb)store.set('pps.quest.endless',score);
@@ -399,13 +433,14 @@ function ending(){state='end';$('pad').hidden=true;$('hud').hidden=true;const be
  const rank=mist===0?'전설의 조달관':mist<=3?'알뜰 조달왕':'든든한 살림꾼';sfx.big();
  const did=['학교에 딱 필요한 만큼 납품 → <b>구매·공급</b>',(bidPick==='good'?'값·품질·납기를 따져 업체 선정':'업체 고르기에서 얻은 교훈')+' → <b>좋은 제품을 알맞은 값에 구매</b>','산불 현장에 긴급 납품 → <b>재난 때 신속 지원</b>',(innov?'혁신제품의 첫 손님이 됨':'다음에는 혁신제품의 첫 손님이 되어 보세요')+' → <b>혁신제품 시범구매</b>'];$('ov').className='end';
  $('ov').innerHTML='<h1><small>퀘스트 완료</small>조달의 미래를 지켜 냈어요!</h1><div class="badge">'+rank+'</div><div class="big">'+score.toLocaleString()+'</div><p>실수 '+mist+'번 · 최고 점수 '+best.toLocaleString()+'</p><ul class="did"><li style="color:#7fd8ff;font-weight:800">오늘 달이가 한 일은 조달청이 실제로 하는 일이에요</li>'+did.map(d=>'<li>'+d+'</li>').join('')+'</ul><button class="btn" data-go="end">끝없는 납품 도전</button><button class="btn sub" data-go="new">이야기 처음부터</button>';$('ov').hidden=false}
-function menu(){state='menu';paused=false;$('ov').className='';ch=0;bgI=0;endless=false;$('mult').textContent='';const eb=+store.get('pps.quest.endless',0)||0;$('hud').hidden=true;$('pad').hidden=true;$('talk').hidden=true;const best=+store.get('pps.quest.best',0)||0;
+function menu(){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;state='menu';paused=false;$('ov').className='';ch=0;bgI=0;endless=false;$('mult').textContent='';const eb=+store.get('pps.quest.endless',0)||0;$('hud').hidden=true;$('pad').hidden=true;$('talk').hidden=true;const best=+store.get('pps.quest.best',0)||0;
  $('ov').innerHTML='<h1><small>지우개부터 헬리콥터까지</small>달이의<br>조달 퀘스트</h1><p>조달청 새내기 달이와 함께<br>나라에 필요한 물건을 딱 필요한 만큼 전해 주세요.</p><button class="btn" data-go="new">이야기 시작</button><button class="btn sub" data-go="end">끝없는 납품 (점수 도전)</button><p class="fine">오른쪽 아래 ◀ ▶ 버튼 · 화면 밀기 · 방향키'+(best?'<br>이야기 최고 '+best.toLocaleString():'')+(eb?' · 끝없는 납품 최고 '+eb.toLocaleString():'')+'</p>';$('ov').hidden=false}
 $('ov').addEventListener('click',e=>{if(state==='verdict'){if(performance.now()-vAt<700)return;const cb=vCb;vCb=null;if(cb){$('ov').className='';$('ov').hidden=true;cb()}return}
  const pk=e.target.closest('[data-pick]');if(pk&&pickCb){audio();const cb=pickCb;pickCb=null;sfx.order();cb(+pk.dataset.pick);return}
  const b=e.target.closest('[data-go]');if(!b)return;audio();const go=b.dataset.go;
  if(go==='resume'){paused=false;$('ov').hidden=true}else if(go==='demo'){const cb=demoCb;demoCb=null;$('ov').hidden=true;$('ov').className='';if(cb)cb()}else if(go==='menu')menu();else if(go==='end')startEndless();else if(go==='retry'){score=chScore;mist=chMist;hearts=3;startCh()}
- else{score=0;hearts=3;mist=0;ch=0;bgI=0;endless=false;innov=null;bidPick=null;mod={bad:0,lim:1,bonus:1};P.x=P.tx=W/2;$('ov').className='';$('ov').hidden=true;talk(0,startCh)}});
+ else if(go==='tutY')tutorial();else if(go==='tutN'){$('ov').hidden=true;talk(0,startCh)}
+ else{score=0;hearts=3;mist=0;ch=0;bgI=0;endless=false;innov=null;bidPick=null;mod={bad:0,lim:1,bonus:1};P.x=P.tx=W/2;ask()}});
 
 // ---------- 대화 ----------
 let tl=null,ti=0,tn=0,tcb=null;
@@ -425,21 +460,21 @@ function catchIt(it){const by=GY-24;P.bounce=.14;
   sfx.get(combo);if(perf)sfx.perf();buzz(perf?18:10);freeze=perf?.07:.05;punch=perf?.06:.035;burst(it.x+6,by,ITEMS[it.k].c.concat('#fff'),perf?18:10,perf?190:140);if(perf)flash('#ffffff',.1);
   {const c0=ITEMS[it.k].c[0],cx=it.x+6;ring(cx,by,c0,perf?54:34,.35);ring(cx,by,'#ffffff',perf?40:24,.28,.05);beam(cx,perf?'#ffffff':c0,perf?.35:.25);edge(perf?'#ffffff':c0,perf?.3:.2);
    if(perf||m>=3){ring(cx,by,'#ffd34d',perf?78:56,.5,.08);stars8(cx,by-6,'#ffd34d')}}
-  if(Object.values(o.need).every(v=>v===0))orderDone();else panel()}
+  if(Object.values(o.need).every(v=>v===0)){if(tut)tutFilled();else orderDone()}else panel()}
  else hurt(o.need[it.k]===0?'딱 필요한 만큼만!':'주문에 없는 물건!',it.x+6,by-10,o.need[it.k]===0?'over':'wrong')}
 function feverX(){return W/2-13+Math.sin(clock*2.4)*64}
 function upd(dt){
  for(const t of timers.slice()){t.t-=dt;if(t.t<=0){timers.splice(timers.indexOf(t),1);t.fn();if(state!=='play')return}}
  if(P.dir)P.tx=Math.max(14,Math.min(W-14,P.tx+P.dir*190*dt));
- if(order&&!order.done&&feverT<=0){order.t-=dt;const tn=Math.ceil(order.t);if(order.t<3&&tn!==tickN){tickN=tn;sfx.tick()}
+ if(order&&!order.done&&feverT<=0&&!tut){order.t-=dt;const tn=Math.ceil(order.t);if(order.t<3&&tn!==tickN){tickN=tn;sfx.tick()}
   if(order.t<=0){order.t=order.lim*.6;tickN=0;hurt('납품 지연!',W/2,110,'late');sfx.late()}}
  if(mult()>1&&rnd()<dt*30*(mult()-1))parts.push({x:P.x-14+rnd()*28,y:GY-8,vx:(rnd()-.5)*30,vy:-40-rnd()*50,c:['#ffd34d','#ff9a3a','#ff5a2a','#fff'][rnd()*4|0],t:0,l:.3+rnd()*.3,s:mult()>3?2:1});
  P.x+=(P.tx-P.x)*Math.min(1,dt*20);if(P.bounce>0)P.bounce-=dt;
  if(gauge>=1&&feverT<=0&&order&&!order.done){feverT=FEVER;fc=0;gauge=0;for(const it of items){it.gold=true;it.k='gold'}banner('특급 조달 타임!');if(!feverSeen){feverSeen=true;later(.9,()=>pop('금색 상자는 전부 받아요!',W/2,150,'gold'))}sfx.fever();flash('#ffd34d',.3);buzz([30,30,30])}
- spawnT-=dt;
+ spawnT-=dt;if(tut&&!tut.busy)tutUpd(dt);
  if(feverT>0){feverT-=dt;if(spawnT<=0){spawnT=.16;items.push({gold:true,k:'gold',x:Math.max(4,Math.min(W-16,feverX()+7+(rnd()-.5)*36)),y:74,v:100+rnd()*40})}
   if(feverT<=0){pop('특급 '+fc+'개!',W/2,120,'gold huge');spawnT=.7}}
- else if(order&&!order.done&&spawnT<=0){const c=C();spawnT=Math.max(.4,c.gap-ordI*.05);const need=Object.keys(order.need).filter(k=>order.need[k]>0);
+ else if(order&&!order.done&&spawnT<=0&&!tut){const c=C();spawnT=Math.max(.4,c.gap-ordI*.05);const need=Object.keys(order.need).filter(k=>order.need[k]>0);
   const bp=c.bad+(endless?0:mod.bad),k=need.length&&dry>=2?need[rnd()*need.length|0]:bp&&rnd()<bp?'bad':need.length&&rnd()<(guide?.8:.5)?need[rnd()*need.length|0]:c.pool[rnd()*c.pool.length|0];
   const isNeed=need.includes(k);dry=isNeed?0:dry+1;let warn=false;if(guide&&!isNeed&&!guideWarn){guideWarn=warn=true}
   items.push({k,warn,x:8+rnd()*(W-28),y:56,v:(c.fall+(endless?0:ordI*4))*(.85+rnd()*.4)*(guide?.62:1),amp:bgI>=2||endless&&ordI>3?8+rnd()*14:0,ph:rnd()*6})}
@@ -447,7 +482,7 @@ function upd(dt){
  for(const it of items){it.y+=it.v*dt;
   if(!it.gold&&it.amp)it.x=Math.max(2,Math.min(W-14,it.x+Math.cos(clock*2.6+it.ph)*it.amp*2.6*dt));
   if(!it.dead&&it.y+12>=by&&it.y+12<=by+13&&Math.abs(it.x+6-P.x)<18){it.dead=true;catchIt(it)}
-  if(it.y>GY-6&&!it.dead){it.dead=true;burst(it.x+6,GY-2,[it.gold?'#ffd34d':'#9aa7c7'],3,50)}}
+  if(it.y>GY-6&&!it.dead){it.dead=true;burst(it.x+6,GY-2,[it.gold?'#ffd34d':'#9aa7c7'],3,50);if(tut)tutMiss(it)}}
  items=items.filter(i=>!i.dead);
  if(big){big.t+=dt;big.y+=48*dt;big.x=big.cx-14+Math.sin(big.t*2.2)*26;
   if(big.y+16>=by&&big.y+16<=by+14&&Math.abs(big.x+14-P.x)<23)bigCaught();
