@@ -103,16 +103,20 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}ca
 const rnd=Math.random;
 
 // ---------- 소리 ----------
-let ac,master,nbuf,mute=store.get('pps.quest.mute','0')==='1';
-function audio(){try{if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const c=ac.createDynamicsCompressor();master=ac.createGain();master.gain.value=mute?0:.5;master.connect(c);c.connect(ac.destination);const n=ac.sampleRate*.5|0;nbuf=ac.createBuffer(1,n,ac.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1}if(ac.state==='suspended')ac.resume();return ac}catch(e){return null}}
+let ac,master,nbuf,mbus,mdel,mute=store.get('pps.quest.mute','0')==='1';
+function audio(){try{if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();const c=ac.createDynamicsCompressor();master=ac.createGain();master.gain.value=mute?0:.5;master.connect(c);c.connect(ac.destination);
+  {const len=ac.sampleRate*1.3|0,ir=ac.createBuffer(2,len,ac.sampleRate);for(let k=0;k<2;k++){const d=ir.getChannelData(k);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}const cv2=ac.createConvolver(),wet=ac.createGain();cv2.buffer=ir;wet.gain.value=.22;master.connect(cv2);cv2.connect(wet);wet.connect(c);
+   mbus=ac.createGain();mbus.gain.value=.5;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=7000;mbus.connect(lp);lp.connect(master);
+   mdel=ac.createDelay(1);mdel.delayTime.value=.28;const fb=ac.createGain(),dw=ac.createGain();fb.gain.value=.3;dw.gain.value=.3;mdel.connect(fb);fb.connect(mdel);mdel.connect(dw);dw.connect(mbus)}const n=ac.sampleRate*.5|0;nbuf=ac.createBuffer(1,n,ac.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1}if(ac.state==='suspended')ac.resume();return ac}catch(e){return null}}
 function tone(f,d,type,when,vol,f2){const a=audio();if(!a)return;const o=a.createOscillator(),q=a.createGain(),t=a.currentTime+(when||0);o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);q.gain.setValueAtTime(.0001,t);q.gain.exponentialRampToValueAtTime(vol||.12,t+.008);q.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(q);q.connect(master);o.start(t);o.stop(t+d+.03)}
 function noise(d,freq,vol,when,type){const a=audio();if(!a)return;const s=a.createBufferSource(),f=a.createBiquadFilter(),q=a.createGain(),t=a.currentTime+(when||0);s.buffer=nbuf;f.type=type||'bandpass';f.frequency.value=freq;q.gain.setValueAtTime(vol||.15,t);q.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(q);q.connect(master);s.start(t);s.stop(t+d+.03)}
+const PENT=[0,2,4,7,9,12,14,16,19,21,24];
 const sfx={
- get(c){const m=Math.pow(2,Math.min(c,14)/12);tone(130,.09,'sine',0,.3,55);noise(.04,3200,.1);tone(440*m,.1,'square',0,.1);tone(880*m,.13,'triangle',.03,.09)},
- gold(c){const m=Math.pow(2,(c%16)/12);tone(784*m,.08,'square',0,.07);tone(1568*m,.1,'triangle',.02,.06);noise(.03,5000,.05)},
+ get(c){const m=Math.pow(2,PENT[Math.min(c-1,PENT.length-1)]/12);tone(140,.1,'sine',0,.32,50);noise(.035,3500,.1);tone(659*m,.07,'square',0,.09);tone(988*m,.26,'square',.06,.085);tone(1976*m,.2,'sine',.06,.04)},
+ gold(c){const m=Math.pow(2,PENT[c%8]/12);tone(1047*m,.05,'square',0,.06);tone(1568*m,.18,'square',.045,.055);tone(3136*m,.14,'sine',.045,.03)},
  bad(){tone(160,.3,'sawtooth',0,.16,55);noise(.25,300,.25)},
  order(){tone(660,.08,'square',0,.08);tone(990,.12,'square',.09,.08)},
- done(){[523,659,784,1047].forEach((f,i)=>tone(f,.14,'square',i*.07,.11));tone(1047,.4,'triangle',.28,.15);tone(1319,.4,'triangle',.28,.1);noise(.3,6000,.06,.28)},
+ done(){[523,659,784,1047].forEach((f,i)=>{tone(f,.13,'square',i*.07,.1);tone(f/2,.13,'triangle',i*.07,.1)});[1047,1319,1568].forEach(f=>{tone(f,.55,'triangle',.28,.1);tone(f*1.003,.55,'square',.28,.03)});tone(131,.5,'triangle',.28,.2);noise(.35,7000,.06,.28)},
  fever(){for(let i=0;i<8;i++)tone(523*Math.pow(2,i/6),.09,'square',i*.045,.09);noise(.5,4000,.08,.3)},
  warn(){for(let i=0;i<3;i++){tone(880,.12,'square',i*.22,.1);tone(660,.1,'square',i*.22+.11,.1)}},
  big(){tone(90,.6,'sine',0,.4,35);noise(.5,200,.35,0,'lowpass');[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,.16,'square',.1+i*.08,.11));tone(1568,.7,'triangle',.6,.16);tone(2093,.7,'triangle',.6,.1);noise(.6,7000,.07,.6)},
@@ -124,13 +128,36 @@ const sfx={
  end(){[392,330,262].forEach((f,i)=>tone(f,.22,'triangle',i*.16,.14))}
 };
 function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
-// 배경 음악: 16분음 32칸짜리 짧은 반복
-const MEL=[0,null,4,7,null,7,9,7,4,null,7,12,null,9,7,null,5,null,9,12,null,12,14,12,7,null,11,14,null,12,11,null],BASS=[0,0,5,7];
-let musT=0,step=0;
-function music(dt){musT-=dt;if(musT>0)return;const c=C();musT+=feverT>0?c.bpm*.72:c.bpm;const s=step%32,n=MEL[s],tr=c.tr+(feverT>0?12:0);
- if(n!==null)tone(262*Math.pow(2,(n+tr)/12),.11,'square',0,.028);
- if(s%4===0)tone(131*Math.pow(2,(BASS[s>>3]+c.tr)/12),.2,'triangle',0,.07);
- if(s%2===1)noise(.03,6500,.02);if(s%8===4)noise(.07,1700,.045);step++}
+// 배경 음악: 장마다 다른 8마디 곡. 오디오 시계로 예약해 화면 연출과 무관하게 박자가 일정하다.
+const MAJ=[0,2,4,5,7,9,11],MIN=[0,2,3,5,7,8,10],DOR=[0,2,3,5,7,9,10];
+function parseMel(str){const out=[];let p=0;for(const tk of str.trim().split(/\s+/)){const q=tk.split(':'),len=+q[1];if(q[0]!=='-')out[p]={d:+q[0],len};p+=len}return out}
+const SONGS=[
+ {bpm:132,root:261.63,sc:MAJ,ch:[0,4,5,3,0,4,3,4],kick:[0,8],mel:'4:2 4:2 7:2 4:2 2:4 4:4  4:2 4:2 6:2 8:2 6:4 4:4  5:2 5:2 7:2 9:2 7:4 5:4  7:2 5:2 3:2 5:2 4:6 -:2  9:2 9:2 8:2 7:2 9:4 7:4  8:2 8:2 7:2 6:2 8:4 4:4  7:2 5:2 7:2 9:2 10:4 9:4  8:2 6:2 8:2 11:2 11:6 -:2'},
+ {bpm:150,root:220,sc:MIN,ch:[0,5,6,4,0,5,6,4],kick:[0,6,8,14],mel:'0:2 4:2 7:2 4:2 0:2 4:2 7:2 4:2  9:4 7:2 5:2 7:4 5:4  8:4 6:2 8:2 10:4 8:4  11:2 10:2 8:2 6:2 4:6 -:2  7:2 7:2 9:2 7:2 11:4 9:4  12:4 9:2 7:2 9:4 5:4  10:2 8:2 10:2 13:2 13:4 10:4  11:2 11:2 11:2 11:2 11:6 -:2'},
+ {bpm:126,root:293.66,sc:DOR,ch:[0,3,0,6,0,3,2,4],kick:[0,6,10],mel:'4:3 7:3 4:2 3:2 4:6  3:3 5:3 7:2 5:2 3:6  4:3 7:3 9:2 8:2 7:6  6:3 8:3 6:2 4:2 6:6  9:2 -:1 9:2 -:1 8:2 7:2 9:6  10:2 -:1 10:2 -:1 9:2 7:2 5:6  9:3 11:3 9:2 6:2 4:6  4:2 6:2 8:2 11:2 11:4 8:4'},
+ {bpm:144,root:329.63,sc:MAJ,ch:[0,3,4,5,3,4,0,0],kick:[0,4,8,12],mel:'0:2 2:2 4:2 7:2 9:4 7:4  10:2 9:2 7:2 5:2 7:4 5:4  8:2 6:2 4:2 6:2 8:4 11:4  9:2 7:2 5:2 7:2 9:6 -:2  10:3 10:1 9:2 7:2 10:4 12:4  11:3 11:1 10:2 8:2 11:4 13:4  14:4 11:2 9:2 11:4 9:4  7:2 9:2 11:2 14:2 14:6 -:2'}
+];
+for(const sg of SONGS)sg.m=parseMel(sg.mel);
+function dfreq(sg,d){const o=Math.floor(d/7),i=((d%7)+7)%7;return sg.root*Math.pow(2,(sg.sc[i]+12*o)/12)}
+function mv(type,f,t,dur,vol,dest,f2){const o=ac.createOscillator(),q=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);q.gain.setValueAtTime(.0001,t);q.gain.exponentialRampToValueAtTime(vol,t+.006);q.gain.exponentialRampToValueAtTime(vol*.55,t+Math.min(.09,dur*.5));q.gain.setValueAtTime(vol*.55,t+dur*.8);q.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(q);q.connect(dest);o.start(t);o.stop(t+dur+.02)}
+function mn(t,dur,freq,vol,type){const sr=ac.createBufferSource(),fl=ac.createBiquadFilter(),q=ac.createGain();sr.buffer=nbuf;fl.type=type;fl.frequency.value=freq;q.gain.setValueAtTime(vol,t);q.gain.exponentialRampToValueAtTime(.0001,t+dur);sr.connect(fl);fl.connect(q);q.connect(mbus);sr.start(t);sr.stop(t+dur+.02)}
+let mNext=0,mStep=0,mSong=-1;
+const ARP=[0,2,4,7,4,2,4,7];
+function mPlay(sg,i,t,sd,fv){const st=i%128,bar=st>>4,b=st&15,r=sg.ch[bar],up=fv?7:0,e=sg.m[st];
+ if(e){const fq=dfreq(sg,e.d+up),du=e.len*sd*.92;mv('square',fq,t,du,.05,mbus);mv('square',fq*1.006,t,du,.028,mdel);mv('triangle',fq/2,t,du,.04,mbus)}
+ if(fv||b%2===0)mv('square',dfreq(sg,r+ARP[(fv?b:b>>1)%8]+7),t,sd*.9,.016,mdel);
+ const rb=r>3?r-7:r;if(b===0||b===3||b===6||b===8||b===11)mv('triangle',dfreq(sg,rb)/2,t,sd*2.4,.13,mbus);else if(b===14)mv('triangle',dfreq(sg,rb+4)/2,t,sd*1.6,.11,mbus);
+ if(b===0)for(const k of [0,2,4])mv('triangle',dfreq(sg,r+k),t,sd*14,.018,mbus);
+ if(sg.kick.includes(b))mv('sine',150,t,.13,.3,mbus,45);
+ if(b===4||b===12){mn(t,.11,1900,.1,'bandpass');mv('triangle',190,t,.06,.07,mbus,120)}
+ if(b%2===0||fv)mn(t,b%4===2?.06:.025,8500,b%4===2?.035:.022,'highpass');
+ if(b===15&&bar%4===3){mn(t,.05,1900,.07,'bandpass')}}
+function mTick(){if(!ac||!mbus||ac.state!=='running')return;const on=state==='play'||state==='talk';if(!on){mSong=-1;return}
+ const si=bgI,sg=SONGS[si],fv=feverT>0&&state==='play',sd=60/sg.bpm/4/(fv?1.18:1),now=ac.currentTime;
+ mbus.gain.setTargetAtTime(state==='talk'?.22:.5,now,.15);
+ if(si!==mSong||mNext<now-.3){mSong=si;mStep=0;mNext=now+.06}
+ while(mNext<now+.14){mPlay(sg,mStep,mNext,sd,fv);mNext+=sd;mStep++}}
+setInterval(mTick,30);
 
 // ---------- 물건 그림 (12x12) ----------
 const ITEMS={
@@ -342,8 +369,7 @@ function upd(dt){
   if(big.y+16>=by&&big.y+16<=by+14&&Math.abs(big.x+14-P.x)<23)bigCaught();
   else if(big.y>GY-8){burst(big.x+14,GY-4,['#9aa7c7','#fff'],10,90);pop('다시 한 번!',W/2,150,'dim');big=null;later(.7,()=>{big={k:C().big,cx:50+rnd()*80,x:0,y:40,t:0}})}}
  if(N){N.t+=dt;if(N.t>1.5)N=null}
- music(dt);
- if(hearts<=0)gameOver()}
+  if(hearts<=0)gameOver()}
 function drawPlayer(){const x=P.x-11,b=P.bounce>0?2:0;
  dali(x,GY-36+b);
  P.stack.slice(-8).forEach((k,i)=>ITEMS[k].d(x-3+(i%4)*7,GY-31-(i>>2)*7+b));
