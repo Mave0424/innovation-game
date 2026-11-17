@@ -127,9 +127,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 // 달이의 조달 퀘스트. 그림과 소리는 모두 코드로 만든다(외부 파일 없음).
 const W=180,H=320,GY=H-26;
 const $=id=>document.getElementById(id);
-const stage=$('stage'),cv=$('cv');cv.width=W;cv.height=H;
-let g=cv.getContext('2d');g.imageSmoothingEnabled=false;
-function R(c,x,y,w,h){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h)}
+const stage=$('stage'),cv=$('cv');const SS=4;cv.width=W*SS;cv.height=H*SS;
+let g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.scale(SS,SS);
+function R(c,x,y,w,h){g.fillStyle=c;g.fillRect(Math.round(x*SS)/SS,Math.round(y*SS)/SS,w,h)}
 function fit(){stage.style.setProperty('--u',stage.clientWidth/100+'px')}
 addEventListener('resize',fit);fit();
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -255,8 +255,8 @@ for(const f of [-3,0,1])SPR['n'+f]=mkSpr(32,34,(rc,el,px)=>{const G1='#7fb6d4',G
  el(Wh,15,27,6.2,4.6);
  rc(Rd,8,23,15,2);rc(Rd,21,24,5,3);rc('#b52828',24,26,3,2);
  rc(Or,11,32,3,2);rc(Or,17,32,3,2);px(Or,12,31);px(Or,18,31)});
-function dali(x,y){g.drawImage(SPR.d,Math.round(x),Math.round(y))}
-function narmi(x,y,f){g.drawImage(SPR['n'+(f<0?-3:f>0?1:0)],Math.round(x),Math.round(y))}
+function dali(x,y){g.drawImage(SPR.d,Math.round(x*SS)/SS,Math.round(y*SS)/SS)}
+function narmi(x,y,f){g.drawImage(SPR['n'+(f<0?-3:f>0?1:0)],Math.round(x*SS)/SS,Math.round(y*SS)/SS)}
 const FACE={};
 (function(){const og=g;for(const k of ['d','n']){const c=document.createElement('canvas');c.width=c.height=34;g=c.getContext('2d');if(k==='d')dali(3,1);else narmi(1,0,0);FACE[k]=c.toDataURL()}g=og})();
 
@@ -311,7 +311,7 @@ function drawPortal(t){const cx=W/2,cy=GY-74;for(let i=0;i<6;i++){const r=34-i*5
 
 // ---------- 상태 ----------
 let state='menu',ch=0,ordI=0,order=null,score=0,chScore=0,hearts=3,combo=0,mist=0,gauge=0,feverT=0,fc=0,freeze=0,shakeT=0,flashT=0,flashD=1,flashC='#fff',clock=0,spawnT=0,clean=true,big=null,portal=false,N=null;
-const P={x:W/2,tx:W/2,dir:0,bounce:0,stack:[],big:null};
+const P={x:W/2,tx:W/2,vx:0,dir:0,bounce:0,stack:[],big:null};
 let items=[],parts=[],timers=[],fx=[],edgeT=0,edgeD=1,edgeC='#fff';
 function ring(x,y,c,r,l,d){fx.push({x,y,c,r,l,t:-(d||0)})}
 function beam(x,c,l){fx.push({beam:1,x,c,l,t:0})}
@@ -340,7 +340,7 @@ function panel(){const o=order,c=C();
  $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(tut?'연습':endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
 
 // ---------- 진행 ----------
-function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=0;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
+function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=kL&&!kR?-1:kR&&!kL?1:0;P.vx=0;dragId=null;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
  $('ov').hidden=true;$('talk').hidden=true;$('hud').hidden=false;$('pad').hidden=false;hudTop()}
 function startCh(){const c=CH[ch];endless=false;bgI=ch;chScore=score;chMist=mist;resetPlay();$('chap').textContent=c.t+' · '+c.n;panel();banner(c.t+' '+c.n);later(1.4,nextOrder)}
 function startEndless(){endless=true;bgI=0;ch=0;score=0;hearts=3;mist=0;P.x=P.tx=W/2;resetPlay();$('chap').textContent='끝없는 납품';panel();banner('끝없는 납품!');later(1.2,nextOrder)}
@@ -463,13 +463,16 @@ function catchIt(it){const by=GY-24;P.bounce=.14;
   if(Object.values(o.need).every(v=>v===0)){if(tut)tutFilled();else orderDone()}else panel()}
  else hurt(o.need[it.k]===0?'딱 필요한 만큼만!':'주문에 없는 물건!',it.x+6,by-10,o.need[it.k]===0?'over':'wrong')}
 function feverX(){return W/2-13+Math.sin(clock*2.4)*64}
+function move(dt){if(P.bounce>0)P.bounce-=dt;
+ if(P.dir||Math.abs(P.vx)>1){const tv=P.dir*VMAX;if(P.dir&&P.vx*P.dir<VKICK)P.vx=P.dir*VKICK;const r=(P.dir?VACC:VDEC)*dt;P.vx+=Math.max(-r,Math.min(r,tv-P.vx));
+  P.x+=P.vx*dt;if(P.x<14){P.x=14;P.vx=0}else if(P.x>W-14){P.x=W-14;P.vx=0}P.tx=P.x}
+ else{P.vx=0;P.x+=(P.tx-P.x)*(1-Math.exp(-dt*32));if(Math.abs(P.tx-P.x)<.05)P.x=P.tx}}
+const VMAX=215,VKICK=50,VACC=950,VDEC=3000;
 function upd(dt){
  for(const t of timers.slice()){t.t-=dt;if(t.t<=0){timers.splice(timers.indexOf(t),1);t.fn();if(state!=='play')return}}
- if(P.dir)P.tx=Math.max(14,Math.min(W-14,P.tx+P.dir*190*dt));
  if(order&&!order.done&&feverT<=0&&!tut){order.t-=dt;const tn=Math.ceil(order.t);if(order.t<3&&tn!==tickN){tickN=tn;sfx.tick()}
   if(order.t<=0){order.t=order.lim*.6;tickN=0;hurt('납품 지연!',W/2,110,'late');sfx.late()}}
  if(mult()>1&&rnd()<dt*30*(mult()-1))parts.push({x:P.x-14+rnd()*28,y:GY-8,vx:(rnd()-.5)*30,vy:-40-rnd()*50,c:['#ffd34d','#ff9a3a','#ff5a2a','#fff'][rnd()*4|0],t:0,l:.3+rnd()*.3,s:mult()>3?2:1});
- P.x+=(P.tx-P.x)*Math.min(1,dt*20);if(P.bounce>0)P.bounce-=dt;
  if(gauge>=1&&feverT<=0&&order&&!order.done){feverT=FEVER;fc=0;gauge=0;for(const it of items){it.gold=true;it.k='gold'}banner('특급 조달 타임!');if(!feverSeen){feverSeen=true;later(.9,()=>pop('금색 상자는 전부 받아요!',W/2,150,'gold'))}sfx.fever();flash('#ffd34d',.3);buzz([30,30,30])}
  spawnT-=dt;if(tut&&!tut.busy)tutUpd(dt);
  if(feverT>0){feverT-=dt;if(spawnT<=0){spawnT=.16;items.push({gold:true,k:'gold',x:Math.max(4,Math.min(W-16,feverX()+7+(rnd()-.5)*36)),y:74,v:100+rnd()*40})}
@@ -533,17 +536,20 @@ function setMute(){$('mute').textContent=mute?'소리 끔':'소리 켬';if(maste
 $('mute').addEventListener('click',()=>{mute=!mute;store.set('pps.quest.mute',mute?'1':'0');audio();setMute()});setMute();
 $('pz').addEventListener('click',()=>{audio();pause()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
-function ptr(e){const r=stage.getBoundingClientRect();P.tx=Math.max(14,Math.min(W-14,(e.clientX-r.left)/r.width*W))}
-stage.addEventListener('pointerdown',e=>{if(state==='talk'){audio();talkNext();return}if(state!=='play')return;ptr(e);try{stage.setPointerCapture(e.pointerId)}catch(_){}});
-stage.addEventListener('pointermove',e=>{if(state==='play'&&(e.buttons||e.pointerType==='touch'))ptr(e)});
+let dragId=null,dragX=0;const DRAG=1.25;
+function ptr(e){if(e.pointerId!==dragId||P.dir)return;const r=stage.getBoundingClientRect();if(!r.width)return;P.vx=0;P.tx=Math.max(14,Math.min(W-14,P.tx+(e.clientX-dragX)/r.width*W*DRAG));dragX=e.clientX}
+stage.addEventListener('pointerdown',e=>{if(state==='talk'){audio();talkNext();return}if(state!=='play')return;dragId=e.pointerId;dragX=e.clientX;P.tx=P.x;try{stage.setPointerCapture(e.pointerId)}catch(_){}});
+for(const ev of ['pointerup','pointercancel'])stage.addEventListener(ev,e=>{if(e.pointerId===dragId)dragId=null});
+stage.addEventListener('pointermove',e=>{if(state==='play'&&(e.buttons||e.pointerType==='touch')){const c=e.getCoalescedEvents?e.getCoalescedEvents():[];ptr(c.length?c[c.length-1]:e)}});
 addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='p'||e.key==='P'){if(paused){paused=false;$('ov').hidden=true}else pause();return}
  if(state==='talk'&&(e.key===' '||e.key==='Enter')){e.preventDefault();talkNext();return}if(e.key==='ArrowLeft')kL=true;if(e.key==='ArrowRight')kR=true;if(state!=='play')return;if(e.key==='ArrowLeft'){P.dir=-1;e.preventDefault()}else if(e.key==='ArrowRight'){P.dir=1;e.preventDefault()}});
+addEventListener('blur',()=>{kL=kR=false;P.dir=0;dragId=null});
 addEventListener('keyup',e=>{if(e.key==='ArrowLeft'){kL=false;if(kR)P.dir=1;else if(P.dir===-1)P.dir=0}if(e.key==='ArrowRight'){kR=false;if(kL)P.dir=-1;else if(P.dir===1)P.dir=0}});
 
 let last=0;
 function frame(ts){let dt=Math.max(0,Math.min(.05,(ts-last)/1000||0));last=ts;{const w=state!=='play'||paused,z=$('pz');if(z.hidden!==w)z.hidden=w}
  if(paused){draw();requestAnimationFrame(frame);return}
- if(slow>0){slow-=dt;dt*=.3}clock+=dt;
+ if(state==='play')move(dt);if(slow>0){slow-=dt;dt*=.3}clock+=dt;
  if(punch>0){punch=Math.max(0,punch-dt*.5);cv.style.transform=punch>0?'scale('+(1+punch)+')':''}
  if(shakeT>0)shakeT-=dt;if(flashT>0)flashT-=dt;
  if(freeze>0)freeze-=dt;
