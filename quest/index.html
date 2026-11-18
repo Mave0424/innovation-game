@@ -57,12 +57,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #tutn{display:block;color:#ffd34d;font-weight:900;font-size:calc(var(--u)*3.6);margin-bottom:calc(var(--u)*.6)}
 #tutt{display:block;font-size:calc(var(--u)*4);line-height:1.45;font-weight:700;word-break:keep-all}
 #tutskip{pointer-events:auto;position:absolute;right:0;top:calc(var(--u)*-1);transform:translateY(-100%);background:rgba(8,14,44,.9);border:2px solid #5b6aa0;border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.2) calc(var(--u)*2.6);font-size:calc(var(--u)*3.2);color:#c9d4f2;display:none}
-#bar{flex:none;height:var(--bar);width:min(100vw,calc((100vh - var(--bar) - var(--sab))*9/16));width:min(100vw,calc((100dvh - var(--bar) - var(--sab))*9/16));display:flex;align-items:center;justify-content:flex-end;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 14px;background:#070b1c;touch-action:none;-webkit-user-select:none;user-select:none}
-#lb{margin-right:auto;display:flex;gap:8px}
-#mute,#pz{background:#141c3f;border:2px solid #35467a;border-radius:12px;min-height:46px;padding:0 13px;font-size:15px;font-weight:700;color:#c9d4f2}
+#bar{flex:none;height:var(--bar);width:min(100vw,calc((100vh - var(--bar) - var(--sab))*9/16));width:min(100vw,calc((100dvh - var(--bar) - var(--sab))*9/16));position:relative;display:flex;align-items:center;justify-content:center;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));background:#070b1c;touch-action:none;-webkit-user-select:none;user-select:none}
+#lb{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:calc(var(--bar)*.06)}
+#mute,#pz{background:#141c3f;border:2px solid #35467a;border-radius:12px;font-weight:700;color:#c9d4f2}
+#mute{min-height:calc(var(--bar)*.27);padding:0 10px;font-size:12px;color:#a9b8de}
+#pz{min-height:calc(var(--bar)*.5);min-width:calc(var(--bar)*.95);padding:0 16px;font-size:18px;font-weight:800;border-color:#5b74c0;color:#fff}
 #pz[hidden],#tsk[hidden]{display:none}
 #tsk{pointer-events:auto;position:absolute;right:0;bottom:calc(var(--u)*-1.5);transform:translateY(100%);background:rgba(8,14,44,.92);border:2px solid #ffd34d;border-radius:calc(var(--u)*2.4);padding:calc(var(--u)*1.8) calc(var(--u)*3.4);font-size:calc(var(--u)*3.8);font-weight:800;color:#ffd34d}
-#pad{display:flex;gap:14px}
+#pad{position:absolute;top:0;bottom:0;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+#pad button{pointer-events:auto}
 #pad[hidden]{display:none}
 #pad button{width:calc(var(--bar) - 18px);height:calc(var(--bar) - 18px);border-radius:50%;background:rgba(53,184,240,.3);border:3px solid rgba(127,216,255,.9);color:#fff;font-size:calc(var(--bar)*.36);font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none}
 #pad button.on{background:rgba(53,184,240,.8);transform:scale(.94)}
@@ -441,7 +444,7 @@ function ending(){state='end';$('pad').hidden=true;$('hud').hidden=true;const be
  const did=['학교에 딱 필요한 만큼 납품 → <b>구매·공급</b>',(bidPick==='good'?'값·품질·납기를 따져 업체 선정':'업체 고르기에서 얻은 교훈')+' → <b>좋은 제품을 알맞은 값에 구매</b>','산불 현장에 긴급 납품 → <b>재난 때 신속 지원</b>',(innov?'혁신제품의 첫 손님이 됨':'다음에는 혁신제품의 첫 손님이 되어 보세요')+' → <b>혁신제품 시범구매</b>'];$('ov').className='end';
  $('ov').innerHTML='<h1><small>퀘스트 완료</small>조달의 미래를 지켜 냈어요!</h1><div class="badge">'+rank+'</div><div class="big">'+score.toLocaleString()+'</div><p>실수 '+mist+'번 · 최고 점수 '+best.toLocaleString()+'</p><ul class="did"><li style="color:#7fd8ff;font-weight:800">오늘 달이가 한 일은 조달청이 실제로 하는 일이에요</li>'+did.map(d=>'<li>'+d+'</li>').join('')+'</ul><button class="btn" data-go="end">끝없는 납품 도전</button><button class="btn sub" data-go="new">이야기 처음부터</button>';$('ov').hidden=false}
 function menu(){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;state='menu';paused=false;$('ov').className='';ch=0;bgI=0;endless=false;$('mult').textContent='';const eb=+store.get('pps.quest.endless',0)||0;$('hud').hidden=true;$('pad').hidden=true;$('talk').hidden=true;const best=+store.get('pps.quest.best',0)||0;
- $('ov').innerHTML='<h1><small>지우개부터 헬리콥터까지</small>달이의<br>조달 퀘스트</h1><p>조달청 새내기 달이와 함께<br>나라에 필요한 물건을 딱 필요한 만큼 전해 주세요.</p><button class="btn" data-go="new">이야기 시작</button><button class="btn sub" data-go="end">끝없는 납품 (점수 도전)</button>'+(store.get('pps.quest.tut',0)?'<button class="btn sub" data-go="prac">조작 연습</button>':'')+'<p class="fine">오른쪽 아래 ◀ ▶ 버튼 · 화면 밀기 · 방향키'+(best?'<br>이야기 최고 '+best.toLocaleString():'')+(eb?'<br>끝없는 납품 최고 '+eb.toLocaleString():'')+'</p>';$('ov').hidden=false}
+ $('ov').innerHTML='<h1><small>지우개부터 헬리콥터까지</small>달이의<br>조달 퀘스트</h1><p>조달청 새내기 달이와 함께<br>나라에 필요한 물건을 딱 필요한 만큼 전해 주세요.</p><button class="btn" data-go="new">이야기 시작</button><button class="btn sub" data-go="end">끝없는 납품 (점수 도전)</button>'+(store.get('pps.quest.tut',0)?'<button class="btn sub" data-go="prac">조작 연습</button>':'')+'<p class="fine">아래 양쪽 ◀ ▶ 버튼 · 화면 밀기 · 방향키'+(best?'<br>이야기 최고 '+best.toLocaleString():'')+(eb?'<br>끝없는 납품 최고 '+eb.toLocaleString():'')+'</p>';$('ov').hidden=false}
 $('ov').addEventListener('click',e=>{if(state==='verdict'){if(performance.now()-vAt<700)return;const cb=vCb;vCb=null;if(cb){$('ov').className='';$('ov').hidden=true;cb()}return}
  const pk=e.target.closest('[data-pick]');if(pk&&pickCb){audio();const cb=pickCb;pickCb=null;sfx.order();cb(+pk.dataset.pick);return}
  const b=e.target.closest('[data-go]');if(!b)return;audio();const go=b.dataset.go;
