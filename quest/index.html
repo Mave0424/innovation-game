@@ -25,11 +25,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #panel .cnt{font-size:calc(var(--u)*3.2);color:#a9b8de;white-space:nowrap}
 .chip{display:flex;align-items:center;gap:calc(var(--u)*1);background:#16224f;border-radius:calc(var(--u)*1.6);padding:calc(var(--u)*.8) calc(var(--u)*1.6);font-weight:800;font-size:calc(var(--u)*4.4)}
 .chip img{width:calc(var(--u)*7.5);height:calc(var(--u)*7.5);image-rendering:pixelated;border-radius:3px}
+.chip{display:grid;grid-template-columns:auto auto;justify-content:center;row-gap:0}
+.chip small{grid-column:1/3;text-align:center;font-size:calc(var(--u)*2.9);font-weight:700;color:#c9d4f2;line-height:1.15;white-space:nowrap}
 .chip.ok{opacity:.45}
 #panel .tip{font-size:calc(var(--u)*3.6);color:#ffd34d;font-weight:800}
-#gauge{position:relative;height:calc(var(--u)*3.4);background:rgba(10,16,48,.85);border:2px solid #7a6a2a;border-radius:calc(var(--u)*2);overflow:hidden}
+#gauge{position:relative;height:calc(var(--u)*5);background:rgba(10,16,48,.85);border:2px solid #7a6a2a;border-radius:calc(var(--u)*2);overflow:hidden}
 #gauge i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#ff9a3a,#ffd34d)}
-#gauge b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*2.6);color:#fff;text-shadow:0 1px 0 #000;letter-spacing:.1em}
+#gauge b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*3.3);font-weight:800;color:#fff;text-shadow:0 1px 0 #000,0 0 3px #000;letter-spacing:.04em}
 #gauge.on{border-color:#ffd34d;animation:glow .3s linear infinite alternate}
 #tm{height:calc(var(--u)*1.8);background:rgba(10,16,48,.85);border-radius:calc(var(--u));overflow:hidden}
 #tm i{display:block;height:100%;width:0;background:#4be08a}
@@ -50,7 +52,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #ttext{font-size:calc(var(--u)*4.3);line-height:1.5;font-weight:600;word-break:keep-all}
 #tnext{position:absolute;right:calc(var(--u)*3);bottom:calc(var(--u)*1.6);font-size:calc(var(--u)*3);color:#ffd34d;animation:glow .5s linear infinite alternate}
 #skip{position:absolute;right:0;top:calc(var(--u)*-11);background:rgba(8,14,44,.9);border:2px solid #5b6aa0;border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.6) calc(var(--u)*3);font-size:calc(var(--u)*3.4);color:#c9d4f2}
-#tut{position:absolute;left:calc(var(--u)*3);right:calc(var(--u)*3);top:calc(var(--u)*36);background:rgba(8,14,44,.9);border:2px solid #ffd34d;border-radius:calc(var(--u)*3);padding:calc(var(--u)*2.4) calc(var(--u)*3);pointer-events:none;text-align:left}
+#tut{position:absolute;left:calc(var(--u)*3);right:calc(var(--u)*3);top:calc(var(--u)*41);background:rgba(8,14,44,.9);border:2px solid #ffd34d;border-radius:calc(var(--u)*3);padding:calc(var(--u)*2.4) calc(var(--u)*3);pointer-events:none;text-align:left}
 #tut[hidden]{display:none}
 #tutn{display:block;color:#ffd34d;font-weight:900;font-size:calc(var(--u)*3.6);margin-bottom:calc(var(--u)*.6)}
 #tutt{display:block;font-size:calc(var(--u)*4);line-height:1.45;font-weight:700;word-break:keep-all}
@@ -112,7 +114,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
     <div id="top"><span id="hearts"></span><span id="chap"></span><span id="score">0</span></div>
     <div id="panel"></div>
     <div id="tm"><i></i></div>
-    <div id="gauge"><i></i><b>특급 조달 게이지</b></div>
+    <div id="gauge"><i></i><b>특급 조달 게이지 · 잘 받으면 차요</b></div>
   </div>
   <div id="mult"></div>
   <div id="pops"></div>
@@ -327,7 +329,7 @@ const BIGN={bus:'통학버스',heli:'산불 진압 헬리콥터',sat:'인공위�
 let tut=null;
 const TC={t:'연습',n:'연습',pool:['eraser','desk','pc'],bad:0,fall:46,gap:1.2,bpm:.16,tr:0,big:'bus',bigN:'통학버스',orders:[]};
 function C(){return tut?TC:endless?EC:CH[ch]}
-function ords(){const c=C();return !endless&&ch===2&&innov?c.orders.concat([['시범사용 현장',{drone:2,robot:2,solar:2}]]):c.orders}
+function ords(){const c=C();return !endless&&ch===2&&innov?c.orders.concat([['시범사용',{drone:2,robot:2,solar:2}]]):c.orders}
 function mult(){return Math.min(5,1+(combo/5|0))}
 function later(t,fn){timers.push({t,fn})}
 function pop(text,x,y,cls){const e=document.createElement('div');e.className='pop '+(cls||'');e.textContent=text;e.style.left=Math.max(12,Math.min(88,x/W*100))+'%';e.style.top=y/H*100+'%';$('pops').appendChild(e);setTimeout(()=>e.remove(),820)}
@@ -336,9 +338,10 @@ function flash(c,d){flashC=c;flashD=flashT=d}
 function burst(x,y,cols,n,pow){for(let i=0;i<n;i++)parts.push({x,y,vx:(rnd()-.5)*pow,vy:-rnd()*pow*.9-20,c:cols[i%cols.length],t:0,l:.35+rnd()*.45,s:rnd()<.35?2:1})}
 function hudTop(){let h='';for(let i=0;i<3;i++)h+='<i class="'+(i<hearts?'':'off')+'">♥</i>';$('hearts').innerHTML=h}
 function hurt(text,x,y,kind){if(tut){tutFail(text,x,y);return}if(kind)why[kind]++;edge('#ff2a4a',.5);ring(P.x,GY-24,'#ff2a4a',44,.4);hearts--;mist++;combo=0;clean=false;gauge=Math.max(0,gauge-.25);shakeT=.35;flash('#ff2a4a',.3);hudTop();pop(text,x,y,'bad');sfx.bad();buzz(80)}
+const SHORT={helmet:'헬멧',hose:'호스',solar:'태양광',battery:'수소전지'};
 function panel(){const o=order,c=C();
  if(!o){$('panel').innerHTML='<span class="tip">'+(big||P.big?'대형 납품: '+c.bigN+'!':(tut?'연습 중이에요':'나라장터 주문서를 기다리는 중…'))+'</span>';return}
- $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(tut?'연습':endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
+ $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'<small>'+(SHORT[k]||ITEMS[k].n)+'</small></span>').join('')+'</span><span class="cnt">'+(tut?'연습':endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
 
 // ---------- 진행 ----------
 function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=heldDir();P.vx=0;dragId=null;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
@@ -564,7 +567,7 @@ function frame(ts){let dt=Math.max(0,Math.min(.05,(ts-last)/1000||0));last=ts;{c
  draw();
  if(state==='play'){if(score!==lastScore){lastScore=score;const e=$('score');e.textContent=score.toLocaleString();e.classList.remove('b');void e.offsetWidth;e.classList.add('b')}
   const m=mult();if(m!==lastMult){lastMult=m;const e=$('mult');e.textContent=m>1?'x'+m:'';e.classList.remove('b');void e.offsetWidth;e.classList.add('b')}
-  const tb=$('tm');tb.classList.toggle('low',!!order&&order.t<3);tb.firstElementChild.style.width=(order&&!order.done?Math.max(0,order.t/order.lim)*100:0)+'%';const f=feverT>0;$('gauge').classList.toggle('on',f);$('gauge').firstElementChild.style.width=(f?feverT/FEVER:gauge)*100+'%';$('gauge').lastElementChild.textContent=f?'특급 조달 타임!':'특급 조달 게이지'}
+  const tb=$('tm');tb.classList.toggle('low',!!order&&order.t<3);tb.firstElementChild.style.width=(order&&!order.done?Math.max(0,order.t/order.lim)*100:0)+'%';const f=feverT>0;$('gauge').classList.toggle('on',f);$('gauge').firstElementChild.style.width=(f?feverT/FEVER:gauge)*100+'%';$('gauge').lastElementChild.textContent=f?'특급 조달 타임!':'특급 조달 게이지 · 잘 받으면 차요'}
  requestAnimationFrame(frame)}
 menu();requestAnimationFrame(frame);
 </script>
