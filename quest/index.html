@@ -57,9 +57,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
 #tutskip{pointer-events:auto;position:absolute;right:0;top:calc(var(--u)*-1);transform:translateY(-100%);background:rgba(8,14,44,.9);border:2px solid #5b6aa0;border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.2) calc(var(--u)*2.6);font-size:calc(var(--u)*3.2);color:#c9d4f2;display:none}
 #bar{flex:none;height:var(--bar);width:min(100vw,calc((100vh - var(--bar) - var(--sab))*9/16));width:min(100vw,calc((100dvh - var(--bar) - var(--sab))*9/16));display:flex;align-items:center;justify-content:flex-end;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 14px;background:#070b1c;touch-action:none;-webkit-user-select:none;user-select:none}
 #lb{margin-right:auto;display:flex;gap:8px}
-#mute,#pz{background:#141c3f;border:2px solid #35467a;border-radius:12px;padding:10px 10px;font-size:13px;color:#a9b8de}
+#mute,#pz{background:#141c3f;border:2px solid #35467a;border-radius:12px;min-height:46px;padding:0 13px;font-size:15px;font-weight:700;color:#c9d4f2}
 #pz[hidden],#tsk[hidden]{display:none}
-#tsk{background:#141c3f;border:2px solid #7a6a2a;border-radius:12px;padding:10px 10px;font-size:13px;color:#ffd34d}
+#tsk{pointer-events:auto;position:absolute;right:0;bottom:calc(var(--u)*-1.5);transform:translateY(100%);background:rgba(8,14,44,.92);border:2px solid #ffd34d;border-radius:calc(var(--u)*2.4);padding:calc(var(--u)*1.8) calc(var(--u)*3.4);font-size:calc(var(--u)*3.8);font-weight:800;color:#ffd34d}
 #pad{display:flex;gap:14px}
 #pad[hidden]{display:none}
 #pad button{width:calc(var(--bar) - 18px);height:calc(var(--bar) - 18px);border-radius:50%;background:rgba(53,184,240,.3);border:3px solid rgba(127,216,255,.9);color:#fff;font-size:calc(var(--bar)*.36);font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none}
@@ -118,10 +118,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelate
   <div id="pops"></div>
   <div id="banner"></div>
   <div id="talk" hidden><img id="face" alt=""><div class="tx"><b id="tname"></b><span id="ttext"></span></div><button id="skip">건너뛰기</button><span id="tnext">▼ 누르면 다음</span></div>
-  <div id="tut" hidden><b id="tutn"></b><span id="tutt"></span></div>
+  <div id="tut" hidden><b id="tutn"></b><span id="tutt"></span><button id="tsk" hidden>연습 건너뛰기</button></div>
   <div id="ov"></div>
 </div>
-<div id="bar"><div id="lb"><button id="mute">소리 켬</button><button id="pz" hidden>멈춤</button><button id="tsk" hidden>연습 건너뛰기</button></div><div id="pad" hidden></div></div>
+<div id="bar"><div id="lb"><button id="mute">소리 켬</button><button id="pz" hidden>멈춤</button></div><div id="pad" hidden></div></div>
 <script>
 'use strict';
 // 달이의 조달 퀘스트. 그림과 소리는 모두 코드로 만든다(외부 파일 없음).
@@ -318,6 +318,7 @@ function beam(x,c,l){fx.push({beam:1,x,c,l,t:0})}
 function edge(c,d){edgeC=c;edgeD=edgeT=d}
 function stars8(x,y,c){for(let i=0;i<8;i++){const a=i*Math.PI/4;parts.push({x,y,vx:Math.cos(a)*150,vy:Math.sin(a)*150-60,c:i%2?c:'#fff',t:0,l:.4,s:2})}}
 const FEVER=6,GAUGE_N=8;
+let fullSeen=0;
 let chMist=0,kL=false,kR=false;
 let mod={bad:0,lim:1,bonus:1},innov=null,bidPick=null,why={over:0,wrong:0,bad:0,late:0},paused=false,dry=0,guide=false,guideWarn=false,feverSeen=false,pickCb=null,demoCb=null;
 let endless=false,bgI=0,slow=0,punch=0,tickN=0,lastMult=1,lastScore=0;
@@ -340,7 +341,7 @@ function panel(){const o=order,c=C();
  $('panel').innerHTML='<span class="who">'+o.who+'</span><span class="chips">'+Object.keys(o.need).map(k=>'<span class="chip'+(o.need[k]?'':' ok')+'"><img src="'+ICON[k]+'" alt="'+ITEMS[k].n+'">'+(o.need[k]?'×'+o.need[k]:'✓')+'</span>').join('')+'</span><span class="cnt">'+(tut?'연습':endless?'납품 '+ordI:(ordI+1)+'/'+ords().length)+'</span>'}
 
 // ---------- 진행 ----------
-function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=kL&&!kR?-1:kR&&!kL?1:0;P.vx=0;dragId=null;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
+function resetPlay(){fx=[];edgeT=0;paused=false;why={over:0,wrong:0,bad:0,late:0};$('ov').className='';state='play';ordI=0;items=[];parts=[];timers=[];big=null;P.big=null;P.stack=[];P.dir=heldDir();P.vx=0;dragId=null;gauge=0;feverT=0;order=null;N=null;combo=0;slow=0;
  $('ov').hidden=true;$('talk').hidden=true;$('hud').hidden=false;$('pad').hidden=false;hudTop()}
 function startCh(){const c=CH[ch];endless=false;bgI=ch;chScore=score;chMist=mist;resetPlay();$('chap').textContent=c.t+' · '+c.n;panel();banner(c.t+' '+c.n);later(1.4,nextOrder)}
 function startEndless(){endless=true;bgI=0;ch=0;score=0;hearts=3;mist=0;P.x=P.tx=W/2;resetPlay();$('chap').textContent='끝없는 납품';panel();banner('끝없는 납품!');later(1.2,nextOrder)}
@@ -351,7 +352,7 @@ function endlessOrder(){const n=ordI;bgI=(n/3|0)%4;const ws=Object.keys(WHOP),wh
  Object.assign(EC,{pool:Object.keys(need).concat(others),fall:Math.min(128,64+n*4),gap:Math.max(.32,.6-n*.018),bad:Math.min(.24,.08+n*.012),bpm:Math.max(.1,.15-n*.003),tr:CH[bgI].tr});
  return [who,need]}
 function nextOrder(){const c=C();if(!endless&&ordI>=ords().length){startBig();return}
- const o=endless?endlessOrder():ords()[ordI];order={who:o[0],need:Object.assign({},o[1]),done:false};const tot=Object.values(order.need).reduce((a,b)=>a+b,0);guide=false;guideWarn=false;dry=2;order.lim=order.t=(5+tot*(endless?Math.max(1.15,1.8-ordI*.03):1.8))*(endless?1:mod.lim)*(guide?1.6:1);tickN=0;clean=true;P.stack=[];spawnT=.5;panel();banner(o[0]+' 주문!');sfx.order();
+ const o=endless?endlessOrder():ords()[ordI];order={who:o[0],need:Object.assign({},o[1]),done:false};const tot=Object.values(order.need).reduce((a,b)=>a+b,0);guide=false;guideWarn=false;dry=2;order.lim=order.t=(5+tot*(endless?Math.max(1.15,1.8-ordI*.03):1.8))*(endless?1:mod.lim)*(!endless&&!tut&&ch===0&&ordI===0?1.6:1);tickN=0;clean=true;P.stack=[];spawnT=.5;panel();banner(o[0]+' 주문!');sfx.order();
  if(!endless&&ch===0&&ordI===0)later(1.5,()=>pop('금색 테두리만 받아요!',W/2,96,'gold'))}
 function orderDone(){let b=(50+ch*20+ordI*10)*mult();if(clean)b*=2;if(!endless)b=Math.round(b*mod.bonus);score+=b;order.done=true;freeze=.12;slow=.35;punch=.09;flash('#ffffff',.22);shakeT=.2;
  banner((clean?'완벽 납품! +':'납품 완료! +')+b);sfx.done();buzz([20,30,40]);
@@ -423,7 +424,10 @@ function tutUpd(dt){const T=tut;T.t+=dt;if(T.s<5)gauge=0;T.w-=dt;
  else if(T.s===5){if(feverT>0)T.fv=1;else if(T.fv)tutOk()}}
 function tutEnd(skip){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;items=[];parts=[];fx=[];timers=[];order=null;feverT=0;gauge=0;score=0;mist=0;combo=0;hearts=3;P.dir=0;$('hud').hidden=true;$('mult').textContent='';lastMult=1;
  if(skip)talk(0,startCh);else talk(TUTEND,()=>talk(0,startCh))}
+$('tsk').addEventListener('pointerdown',e=>e.stopPropagation());
 $('tsk').addEventListener('click',()=>{audio();if(tut&&state==='play'&&!paused)tutEnd(true)});
+function heldDir(){const l=kL||padH[-1],r=kR||padH[1];return l&&!r?-1:r&&!l?1:0}
+function resume(){paused=false;$('ov').hidden=true;P.dir=heldDir()}
 function pause(){if(state!=='play'||paused)return;paused=true;P.dir=0;const o=$('ov');o.className='';o.innerHTML='<h1>잠깐 멈춤</h1><button class="btn" data-go="resume">계속하기</button><button class="btn sub" data-go="menu">처음으로</button>';o.hidden=false}
 function gameOver(){state='over';timers=[];P.dir=0;$('pad').hidden=true;sfx.end();
  if(endless){const old=+store.get('pps.quest.endless',0)||0,nb=score>old;if(nb)store.set('pps.quest.endless',score);
@@ -434,13 +438,13 @@ function ending(){state='end';$('pad').hidden=true;$('hud').hidden=true;const be
  const did=['학교에 딱 필요한 만큼 납품 → <b>구매·공급</b>',(bidPick==='good'?'값·품질·납기를 따져 업체 선정':'업체 고르기에서 얻은 교훈')+' → <b>좋은 제품을 알맞은 값에 구매</b>','산불 현장에 긴급 납품 → <b>재난 때 신속 지원</b>',(innov?'혁신제품의 첫 손님이 됨':'다음에는 혁신제품의 첫 손님이 되어 보세요')+' → <b>혁신제품 시범구매</b>'];$('ov').className='end';
  $('ov').innerHTML='<h1><small>퀘스트 완료</small>조달의 미래를 지켜 냈어요!</h1><div class="badge">'+rank+'</div><div class="big">'+score.toLocaleString()+'</div><p>실수 '+mist+'번 · 최고 점수 '+best.toLocaleString()+'</p><ul class="did"><li style="color:#7fd8ff;font-weight:800">오늘 달이가 한 일은 조달청이 실제로 하는 일이에요</li>'+did.map(d=>'<li>'+d+'</li>').join('')+'</ul><button class="btn" data-go="end">끝없는 납품 도전</button><button class="btn sub" data-go="new">이야기 처음부터</button>';$('ov').hidden=false}
 function menu(){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;state='menu';paused=false;$('ov').className='';ch=0;bgI=0;endless=false;$('mult').textContent='';const eb=+store.get('pps.quest.endless',0)||0;$('hud').hidden=true;$('pad').hidden=true;$('talk').hidden=true;const best=+store.get('pps.quest.best',0)||0;
- $('ov').innerHTML='<h1><small>지우개부터 헬리콥터까지</small>달이의<br>조달 퀘스트</h1><p>조달청 새내기 달이와 함께<br>나라에 필요한 물건을 딱 필요한 만큼 전해 주세요.</p><button class="btn" data-go="new">이야기 시작</button><button class="btn sub" data-go="end">끝없는 납품 (점수 도전)</button><p class="fine">오른쪽 아래 ◀ ▶ 버튼 · 화면 밀기 · 방향키'+(best?'<br>이야기 최고 '+best.toLocaleString():'')+(eb?' · 끝없는 납품 최고 '+eb.toLocaleString():'')+'</p>';$('ov').hidden=false}
+ $('ov').innerHTML='<h1><small>지우개부터 헬리콥터까지</small>달이의<br>조달 퀘스트</h1><p>조달청 새내기 달이와 함께<br>나라에 필요한 물건을 딱 필요한 만큼 전해 주세요.</p><button class="btn" data-go="new">이야기 시작</button><button class="btn sub" data-go="end">끝없는 납품 (점수 도전)</button>'+(store.get('pps.quest.tut',0)?'<button class="btn sub" data-go="prac">조작 연습</button>':'')+'<p class="fine">오른쪽 아래 ◀ ▶ 버튼 · 화면 밀기 · 방향키'+(best?'<br>이야기 최고 '+best.toLocaleString():'')+(eb?'<br>끝없는 납품 최고 '+eb.toLocaleString():'')+'</p>';$('ov').hidden=false}
 $('ov').addEventListener('click',e=>{if(state==='verdict'){if(performance.now()-vAt<700)return;const cb=vCb;vCb=null;if(cb){$('ov').className='';$('ov').hidden=true;cb()}return}
  const pk=e.target.closest('[data-pick]');if(pk&&pickCb){audio();const cb=pickCb;pickCb=null;sfx.order();cb(+pk.dataset.pick);return}
  const b=e.target.closest('[data-go]');if(!b)return;audio();const go=b.dataset.go;
- if(go==='resume'){paused=false;$('ov').hidden=true}else if(go==='demo'){const cb=demoCb;demoCb=null;$('ov').hidden=true;$('ov').className='';if(cb)cb()}else if(go==='menu')menu();else if(go==='end')startEndless();else if(go==='retry'){score=chScore;mist=chMist;hearts=3;startCh()}
- else if(go==='tutY')tutorial();else if(go==='tutN'){$('ov').hidden=true;talk(0,startCh)}
- else{score=0;hearts=3;mist=0;ch=0;bgI=0;endless=false;innov=null;bidPick=null;mod={bad:0,lim:1,bonus:1};P.x=P.tx=W/2;ask()}});
+ if(go==='resume')resume();else if(go==='demo'){const cb=demoCb;demoCb=null;$('ov').hidden=true;$('ov').className='';if(cb)cb()}else if(go==='menu')menu();else if(go==='end')startEndless();else if(go==='retry'){score=chScore;mist=chMist;hearts=3;startCh()}
+ else{if(go==='new'||go==='prac'){score=0;hearts=3;mist=0;ch=0;bgI=0;endless=false;innov=null;bidPick=null;mod={bad:0,lim:1,bonus:1};P.x=P.tx=W/2}
+  if(go==='tutY'||go==='prac'){store.set('pps.quest.tut','1');tutorial()}else if(go==='tutN'||go==='new'&&store.get('pps.quest.tut',0)){store.set('pps.quest.tut','1');$('ov').hidden=true;talk(0,startCh)}else if(go==='new')ask()}});
 
 // ---------- 대화 ----------
 let tl=null,ti=0,tn=0,tcb=null;
@@ -455,7 +459,7 @@ function catchIt(it){const by=GY-24;P.bounce=.14;
  if(it.gold){fc++;const gp=20*mult();score+=gp;punch=Math.max(punch,.025);pop('+'+gp,it.x+6,by-10,'gold');sfx.gold(fc);burst(it.x+6,by,['#ffd34d','#fff3b0','#fff'],7,120);ring(it.x+6,by,'#ffd34d',20,.25);beam(it.x+6,'#ffd34d',.18);edge('#ffd34d',.15);buzz(6);return}
  if(it.k==='bad'){hurt('불량품!',it.x+6,by-10,'bad');return}
  const o=order;if(!o||o.done)return;
- if(o.need[it.k]>0){o.need[it.k]--;combo++;const m=mult(),perf=Math.abs(it.x+6-P.x)<4.5,p=10*m*(perf?2:1);score+=p;P.stack.push(it.k);gauge=Math.min(1,gauge+(perf?1.5:1)/GAUGE_N);
+ if(o.need[it.k]>0){o.need[it.k]--;combo++;const m=mult(),perf=Math.abs(it.x+6-P.x)<4.5,p=10*m*(perf?2:1);score+=p;P.stack.push(it.k);if(!tut&&o.need[it.k]===0&&fullSeen<2&&Object.values(o.need).some(v=>v>0)){fullSeen++;later(.45,()=>pop('다 채운 물건은 이제 피해요!',W/2,150,'gold'))}gauge=Math.min(1,gauge+(perf?1.5:1)/GAUGE_N);
   pop((perf?'퍼펙트! +':'+')+p,it.x+6,by-10,perf||m>1?'gold':'');if(combo%5===0)pop(combo<=20?'배율 x'+m+'!':combo+'콤보!',W/2,130,'gold huge');
   sfx.get(combo);if(perf)sfx.perf();buzz(perf?18:10);freeze=perf?.07:.05;punch=perf?.06:.035;burst(it.x+6,by,ITEMS[it.k].c.concat('#fff'),perf?18:10,perf?190:140);if(perf)flash('#ffffff',.1);
   {const c0=ITEMS[it.k].c[0],cx=it.x+6;ring(cx,by,c0,perf?54:34,.35);ring(cx,by,'#ffffff',perf?40:24,.28,.05);beam(cx,perf?'#ffffff':c0,perf?.35:.25);edge(perf?'#ffffff':c0,perf?.3:.2);
@@ -526,9 +530,10 @@ function draw(){
  if(flashT>0){g.globalAlpha=Math.max(0,flashT/flashD)*.55;R(flashC,0,0,W,H);g.globalAlpha=1}}
 
 // ---------- 조작 ----------
+const padH={};
 (function(){const p=$('pad');p.innerHTML='<button data-k="L" aria-label="왼쪽">◀</button><button data-k="R" aria-label="오른쪽">▶</button>';
  for(const b of p.querySelectorAll('button')){const d=b.dataset.k==='L'?-1:1;
-  const set=v=>{b.classList.toggle('on',v);if(v)P.dir=d;else if(P.dir===d)P.dir=0};
+  const set=v=>{b.classList.toggle('on',v);padH[d]=v;if(v)P.dir=d;else if(padH[-d])P.dir=-d;else if(P.dir===d)P.dir=0};
   b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){}audio();set(true)});
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,e=>{e.stopPropagation();set(false)});
   b.addEventListener('contextmenu',e=>e.preventDefault())}})();
@@ -541,7 +546,7 @@ function ptr(e){if(e.pointerId!==dragId||P.dir)return;const r=stage.getBoundingC
 stage.addEventListener('pointerdown',e=>{if(state==='talk'){audio();talkNext();return}if(state!=='play')return;dragId=e.pointerId;dragX=e.clientX;P.tx=P.x;try{stage.setPointerCapture(e.pointerId)}catch(_){}});
 for(const ev of ['pointerup','pointercancel'])stage.addEventListener(ev,e=>{if(e.pointerId===dragId)dragId=null});
 stage.addEventListener('pointermove',e=>{if(state==='play'&&(e.buttons||e.pointerType==='touch')){const c=e.getCoalescedEvents?e.getCoalescedEvents():[];ptr(c.length?c[c.length-1]:e)}});
-addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='p'||e.key==='P'){if(paused){paused=false;$('ov').hidden=true}else pause();return}
+addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='p'||e.key==='P'){if(paused)resume();else pause();return}
  if(state==='talk'&&(e.key===' '||e.key==='Enter')){e.preventDefault();talkNext();return}if(e.key==='ArrowLeft')kL=true;if(e.key==='ArrowRight')kR=true;if(state!=='play')return;if(e.key==='ArrowLeft'){P.dir=-1;e.preventDefault()}else if(e.key==='ArrowRight'){P.dir=1;e.preventDefault()}});
 addEventListener('blur',()=>{kL=kR=false;P.dir=0;dragId=null});
 addEventListener('keyup',e=>{if(e.key==='ArrowLeft'){kL=false;if(kR)P.dir=1;else if(P.dir===-1)P.dir=0}if(e.key==='ArrowRight'){kR=false;if(kL)P.dir=-1;else if(P.dir===1)P.dir=0}});
