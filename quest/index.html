@@ -422,7 +422,7 @@ function tutUpd(dt){const T=tut;T.t+=dt;if(T.s<5)gauge=0;T.w-=dt;
  else if(T.s===3){if(T.w<=0){T.w=2;const more=order.need.eraser>0;tutSpawn('eraser',more?20+rnd()*(W-50):P.x-6,!more)}}
  else if(T.s===4){if(T.w<=0){T.w=1.2;tutSpawn(rnd()<.6?'pc':'desk',20+rnd()*(W-50))}order.t-=dt;if(order.t<=0){order.t=order.lim;pop('기한이 지났어요. 다시!',W/2,170,'bad');sfx.late()}}
  else if(T.s===5){if(feverT>0)T.fv=1;else if(T.fv)tutOk()}}
-function tutEnd(skip){tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;items=[];parts=[];fx=[];timers=[];order=null;feverT=0;gauge=0;score=0;mist=0;combo=0;hearts=3;P.dir=0;$('hud').hidden=true;$('mult').textContent='';lastMult=1;
+function tutEnd(skip){$('pops').innerHTML='';$('banner').className='';tut=null;guide=false;$('tut').hidden=true;$('tsk').hidden=true;items=[];parts=[];fx=[];timers=[];order=null;feverT=0;gauge=0;score=0;mist=0;combo=0;hearts=3;P.dir=0;$('hud').hidden=true;$('mult').textContent='';lastMult=1;
  if(skip)talk(0,startCh);else talk(TUTEND,()=>talk(0,startCh))}
 $('tsk').addEventListener('pointerdown',e=>e.stopPropagation());
 $('tsk').addEventListener('click',()=>{audio();if(tut&&state==='play'&&!paused)tutEnd(true)});
@@ -543,7 +543,7 @@ $('pz').addEventListener('click',()=>{audio();pause()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 let dragId=null,dragX=0;const DRAG=1.25;
 function ptr(e){if(e.pointerId!==dragId||P.dir)return;const r=stage.getBoundingClientRect();if(!r.width)return;P.vx=0;P.tx=Math.max(14,Math.min(W-14,P.tx+(e.clientX-dragX)/r.width*W*DRAG));dragX=e.clientX}
-stage.addEventListener('pointerdown',e=>{if(state==='talk'){audio();talkNext();return}if(state!=='play')return;dragId=e.pointerId;dragX=e.clientX;P.tx=P.x;try{stage.setPointerCapture(e.pointerId)}catch(_){}});
+stage.addEventListener('pointerdown',e=>{if(state==='talk'){audio();talkNext();return}if(state!=='play'||paused||e.target.closest('#ov'))return;dragId=e.pointerId;dragX=e.clientX;P.tx=P.x;try{stage.setPointerCapture(e.pointerId)}catch(_){}});
 for(const ev of ['pointerup','pointercancel'])stage.addEventListener(ev,e=>{if(e.pointerId===dragId)dragId=null});
 stage.addEventListener('pointermove',e=>{if(state==='play'&&(e.buttons||e.pointerType==='touch')){const c=e.getCoalescedEvents?e.getCoalescedEvents():[];ptr(c.length?c[c.length-1]:e)}});
 addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='p'||e.key==='P'){if(paused)resume();else pause();return}
